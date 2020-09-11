@@ -139,10 +139,10 @@ namespace Microsoft.OpenApi.OData.Operation
 
         protected string GetOperationId(string prefix = null)
         {
-            IList<string> items = new List<string>
-            {
-                NavigationSource.Name
-            };
+            IList<string> items;
+
+            if (Context.Settings.ShortNameService) items = new List<string>();
+            else items = new List<string> {NavigationSource.Name};
 
             var lastpath = Path.Segments.Last(c => c is ODataNavigationPropertySegment);
             foreach (var segment in Path.Segments.Skip(1))

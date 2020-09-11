@@ -130,6 +130,11 @@ namespace Microsoft.OpenApi.OData
         /// </summary>
         public bool ShowSchemaExamples { get; set; } = false;
 
+        /// <summary>
+        /// Gets/Sets a value indicating whether to set short name Services and OperationId
+        /// </summary>
+        public bool ShortNameService { get; set; } = false;
+
         internal OpenApiConvertSettings Clone()
         {
             var newSettings = new OpenApiConvertSettings

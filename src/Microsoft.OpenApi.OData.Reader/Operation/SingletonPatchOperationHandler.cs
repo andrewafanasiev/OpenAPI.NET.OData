@@ -34,7 +34,9 @@ namespace Microsoft.OpenApi.OData.Operation
             if (Context.Settings.EnableOperationId)
             {
                 string typeName = Singleton.EntityType().Name;
-                operation.OperationId = Singleton.Name + "." + typeName + ".Update" + Utils.UpperFirstChar(typeName);
+                operation.OperationId = Context.Settings.ShortNameService
+                    ? $"Update{Utils.UpperFirstChar(typeName)}"
+                    : $"{Singleton.Name}.{typeName}.Update{Utils.UpperFirstChar(typeName)}";
             }
 
             base.SetBasicInfo(operation);

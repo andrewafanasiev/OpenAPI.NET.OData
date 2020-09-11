@@ -66,7 +66,15 @@ namespace Microsoft.OpenApi.OData.Operation
             // OperationId
             if (Context.Settings.EnableOperationId)
             {
-                string operationId = String.Join(".", Path.Segments.Where(s => !(s is ODataKeySegment)).Select(s => s.Identifier));
+                var pathSegments = Path.Segments.Where(s => !(s is ODataKeySegment));
+
+                if (Context.Settings.ShortNameService)
+                {
+                    pathSegments = pathSegments.Where(s => !(s is ODataNavigationSourceSegment));
+                }
+
+                string operationId = String.Join(".", pathSegments.Select(s => s.Identifier));
+                
                 if (EdmOperation.IsAction())
                 {
                     operation.OperationId = operationId;
@@ -97,7 +105,7 @@ namespace Microsoft.OpenApi.OData.Operation
             string value = EdmOperation.IsAction() ? "Actions" : "Functions";
             OpenApiTag tag = new OpenApiTag
             {
-                Name = NavigationSource.Name + "." + value,
+                Name = Context.Settings.ShortNameService ? NavigationSource.Name : $"{NavigationSource.Name}.{value}",
             };
             tag.Extensions.Add(Constants.xMsTocType, new OpenApiString("container"));
             operation.Tags.Add(tag);

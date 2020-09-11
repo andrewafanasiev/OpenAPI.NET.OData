@@ -34,7 +34,9 @@ namespace Microsoft.OpenApi.OData.Operation
             if (Context.Settings.EnableOperationId)
             {
                 string typeName = EntitySet.EntityType().Name;
-                operation.OperationId = EntitySet.Name + "." + typeName + ".Create" + Utils.UpperFirstChar(typeName);
+                operation.OperationId = Context.Settings.ShortNameService
+                    ? $"Create{Utils.UpperFirstChar(typeName)}"
+                    : $"{EntitySet.Name}.{typeName}.Create{Utils.UpperFirstChar(typeName)}";
             }
 
             base.SetBasicInfo(operation);
