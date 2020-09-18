@@ -16,7 +16,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 {
     public class SingletonPatchOperationHandlerTests
     {
-        private SingletonPatchOperationHandler _operationHandler = new SingletonPatchOperationHandler();
+        private SingletonPutOperationHandler _operationHandler = new SingletonPutOperationHandler();
 
         [Theory]
         [InlineData(true)]

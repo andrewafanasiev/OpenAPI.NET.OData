@@ -34,7 +34,7 @@ namespace Microsoft.OpenApi.OData.Operation
             _handlers[ODataPathKind.Entity] = new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new EntityGetOperationHandler() },
-                {OperationType.Patch, new EntityPatchOperationHandler() },
+                {OperationType.Put, new EntityPutOperationHandler() },
                 {OperationType.Delete, new EntityDeleteOperationHandler() }
             };
 
@@ -42,7 +42,7 @@ namespace Microsoft.OpenApi.OData.Operation
             _handlers[ODataPathKind.Singleton] = new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new SingletonGetOperationHandler() },
-                {OperationType.Patch, new SingletonPatchOperationHandler() }
+                {OperationType.Put, new SingletonPutOperationHandler() }
             };
 
             // edm operation (Get|Post)
@@ -63,7 +63,7 @@ namespace Microsoft.OpenApi.OData.Operation
             _handlers[ODataPathKind.NavigationProperty] = new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new NavigationPropertyGetOperationHandler() },
-                {OperationType.Patch, new NavigationPropertyPatchOperationHandler() },
+                {OperationType.Put, new NavigationPropertyPutOperationHandler() },
                 {OperationType.Post, new NavigationPropertyPostOperationHandler() },
                 {OperationType.Delete, new NavigationPropertyDeleteOperationHandler() }
             };
@@ -72,7 +72,7 @@ namespace Microsoft.OpenApi.OData.Operation
             _handlers[ODataPathKind.Ref] = new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new RefGetOperationHandler() },
-                {OperationType.Patch, new RefPatchOperationHandler() },
+                {OperationType.Put, new RefPutOperationHandler() },
                 {OperationType.Post, new RefPostOperationHandler() },
                 {OperationType.Delete, new RefDeleteOperationHandler() }
             };

@@ -16,13 +16,13 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         [InlineData(ODataPathKind.EntitySet, OperationType.Get, typeof(EntitySetGetOperationHandler))]
         [InlineData(ODataPathKind.EntitySet, OperationType.Post, typeof(EntitySetPostOperationHandler))]
         [InlineData(ODataPathKind.Entity, OperationType.Get, typeof(EntityGetOperationHandler))]
-        [InlineData(ODataPathKind.Entity, OperationType.Patch, typeof(EntityPatchOperationHandler))]
+        [InlineData(ODataPathKind.Entity, OperationType.Put, typeof(EntityPutOperationHandler))]
         [InlineData(ODataPathKind.Entity, OperationType.Delete, typeof(EntityDeleteOperationHandler))]
         [InlineData(ODataPathKind.Singleton, OperationType.Get, typeof(SingletonGetOperationHandler))]
-        [InlineData(ODataPathKind.Singleton, OperationType.Patch, typeof(SingletonPatchOperationHandler))]
+        [InlineData(ODataPathKind.Singleton, OperationType.Put, typeof(SingletonPutOperationHandler))]
         [InlineData(ODataPathKind.NavigationProperty, OperationType.Get, typeof(NavigationPropertyGetOperationHandler))]
         [InlineData(ODataPathKind.NavigationProperty, OperationType.Post, typeof(NavigationPropertyPostOperationHandler))]
-        [InlineData(ODataPathKind.NavigationProperty, OperationType.Patch, typeof(NavigationPropertyPatchOperationHandler))]
+        [InlineData(ODataPathKind.NavigationProperty, OperationType.Put, typeof(NavigationPropertyPutOperationHandler))]
         [InlineData(ODataPathKind.NavigationProperty, OperationType.Delete, typeof(NavigationPropertyDeleteOperationHandler))]
         [InlineData(ODataPathKind.Operation, OperationType.Get, typeof(EdmFunctionOperationHandler))]
         [InlineData(ODataPathKind.Operation, OperationType.Post, typeof(EdmActionOperationHandler))]
@@ -31,7 +31,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         [InlineData(ODataPathKind.Ref, OperationType.Post, typeof(RefPostOperationHandler))]
         [InlineData(ODataPathKind.Ref, OperationType.Delete, typeof(RefDeleteOperationHandler))]
         [InlineData(ODataPathKind.Ref, OperationType.Get, typeof(RefGetOperationHandler))]
-        [InlineData(ODataPathKind.Ref, OperationType.Patch, typeof(RefPatchOperationHandler))]
+        [InlineData(ODataPathKind.Ref, OperationType.Put, typeof(RefPutOperationHandler))]
         public void GetHandlerReturnsCorrectOperationHandlerType(ODataPathKind pathKind, OperationType operationType, Type handlerType)
         {
             // Arrange

@@ -37,7 +37,7 @@ namespace Microsoft.OpenApi.OData.PathItem
             UpdateRestrictionsType update = Context.Model.GetRecord<UpdateRestrictionsType>(Singleton);
             if (update == null || update.IsUpdatable)
             {
-                AddOperation(item, OperationType.Patch);
+                AddOperation(item, OperationType.Put);
             }
         }
 

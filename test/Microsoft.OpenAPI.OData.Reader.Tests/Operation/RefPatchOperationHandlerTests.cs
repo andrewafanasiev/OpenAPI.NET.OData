@@ -15,7 +15,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 {
     public class RefPatchOperationHandlerTests
     {
-        private RefPatchOperationHandler _operationHandler = new RefPatchOperationHandler();
+        private RefPutOperationHandler _operationHandler = new RefPutOperationHandler();
 
         [Theory]
         [InlineData(true)]

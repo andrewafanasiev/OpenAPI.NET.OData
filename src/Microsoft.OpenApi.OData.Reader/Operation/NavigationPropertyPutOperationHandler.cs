@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Generator;
@@ -12,23 +13,25 @@ using Microsoft.OpenApi.OData.Generator;
 namespace Microsoft.OpenApi.OData.Operation
 {
     /// <summary>
-    /// Update a navigation property ref for a navigation source.
+    /// Update a navigation property for a navigation source.
+    /// The Path Item Object for the entity set contains the keyword patch with an Operation Object as value
+    /// that describes the capabilities for updating the navigation property for a navigation source.
     /// </summary>
-    internal class RefPatchOperationHandler : NavigationPropertyOperationHandler
+    internal class NavigationPropertyPutOperationHandler : NavigationPropertyOperationHandler
     {
         /// <inheritdoc/>
-        public override OperationType OperationType => OperationType.Patch;
+        public override OperationType OperationType => OperationType.Put;
 
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
             // Summary
-            operation.Summary = "Update the ref of navigation property " + NavigationProperty.Name + " in " + NavigationSource.Name;
+            operation.Summary = "Update the navigation property " + NavigationProperty.Name + " in " + NavigationSource.Name;
 
             // OperationId
             if (Context.Settings.EnableOperationId)
             {
-                string prefix = "UpdateRef";
+                string prefix = "Update";
                 operation.OperationId = GetOperationId(prefix);
             }
 
@@ -38,15 +41,29 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         protected override void SetRequestBody(OpenApiOperation operation)
         {
-            OpenApiSchema schema = new OpenApiSchema
+            OpenApiSchema schema = null;
+
+            if (Context.Settings.EnableDerivedTypesReferencesForRequestBody)
             {
-                Type = "String"
-            };
+                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(NavigationProperty.ToEntityType(), Context.Model);
+            }
+
+            if (schema == null)
+            {
+                schema = new OpenApiSchema
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.Schema,
+                        Id = NavigationProperty.ToEntityType().FullName()
+                    }
+                };
+            }
 
             operation.RequestBody = new OpenApiRequestBody
             {
                 Required = true,
-                Description = "New navigation property ref values",
+                Description = "New navigation property values",
                 Content = new Dictionary<string, OpenApiMediaType>
                 {
                     {

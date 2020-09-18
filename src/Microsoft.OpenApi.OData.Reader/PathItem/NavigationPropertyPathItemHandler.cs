@@ -93,7 +93,7 @@ namespace Microsoft.OpenApi.OData.PathItem
                         UpdateRestrictionsType update = restriction?.UpdateRestrictions;
                         if (update == null || update.IsUpdatable)
                         {
-                            AddOperation(item, OperationType.Patch);
+                            AddOperation(item, OperationType.Put);
                         }
                     }
                     else
@@ -110,7 +110,7 @@ namespace Microsoft.OpenApi.OData.PathItem
                     UpdateRestrictionsType update = restriction?.UpdateRestrictions;
                     if (update == null || update.IsUpdatable)
                     {
-                        AddOperation(item, OperationType.Patch);
+                        AddOperation(item, OperationType.Put);
                     }
                 }
             }

@@ -19,10 +19,10 @@ namespace Microsoft.OpenApi.OData.Operation
     /// The Path Item Object for the entity set contains the keyword patch with an Operation Object as value
     /// that describes the capabilities for updating the singleton, unless the singleton is read-only.
     /// </summary>
-    internal class SingletonPatchOperationHandler : SingletonOperationHandler
+    internal class SingletonPutOperationHandler : SingletonOperationHandler
     {
         /// <inheritdoc/>
-        public override OperationType OperationType => OperationType.Patch;
+        public override OperationType OperationType => OperationType.Put;
 
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
