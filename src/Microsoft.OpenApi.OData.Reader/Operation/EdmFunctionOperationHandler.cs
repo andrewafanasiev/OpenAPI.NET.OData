@@ -7,6 +7,7 @@ using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
+using Microsoft.OpenApi.OData.Generator;
 
 namespace Microsoft.OpenApi.OData.Operation
 {
@@ -28,6 +29,37 @@ namespace Microsoft.OpenApi.OData.Operation
         {
             operation.Extensions.Add(Constants.xMsDosOperationType, new OpenApiString("function"));
             base.SetExtensions(operation);
+        }
+
+        /// <inheritdoc/>
+        protected override void SetParameters(OpenApiOperation operation)
+        {
+            base.SetParameters(operation);
+
+            //var navSourceEntityType = NavigationSource.EntityType();
+            //var operationEntityType = EdmOperation.ReturnType.AsEntityReference().EntityType();
+            //var a = EdmOperation.ReturnType.AsEntity().EntityDefinition();
+
+            IEdmStructuredType structuredType = EdmOperation.ReturnType.AsEntity().EntityDefinition();
+
+            if (EdmOperation.ReturnType.Definition.TypeKind == EdmTypeKind.Collection)
+            {
+                structuredType = (IEdmStructuredType) ((IEdmCollectionType) EdmOperation.ReturnType.Definition).ElementType.Definition;
+            }
+
+            // $select
+            OpenApiParameter parameter = Context.CreateSelect(Function, structuredType);
+            if (parameter != null)
+            {
+                operation.Parameters.Add(parameter);
+            }
+
+            // $expand
+            parameter = Context.CreateExpand(Function, structuredType);
+            if (parameter != null)
+            {
+                operation.Parameters.Add(parameter);
+            }
         }
     }
 }

@@ -409,13 +409,13 @@ namespace Microsoft.OpenApi.OData.Generator
         /// </summary>
         /// <param name="context">The OData context.</param>
         /// <param name="target">The Edm target.</param>
-        /// <param name="entityType">The Edm entity type.</param>
+        /// <param name="structureType">The Edm structured type.</param>
         /// <returns>The created <see cref="OpenApiParameter"/> or null.</returns>
-        public static OpenApiParameter CreateSelect(this ODataContext context, IEdmVocabularyAnnotatable target, IEdmEntityType entityType)
+        public static OpenApiParameter CreateSelect(this ODataContext context, IEdmVocabularyAnnotatable target, IEdmStructuredType structureType)
         {
             Utils.CheckArgumentNull(context, nameof(context));
             Utils.CheckArgumentNull(target, nameof(target));
-            Utils.CheckArgumentNull(entityType, nameof(entityType));
+            Utils.CheckArgumentNull(structureType, nameof(structureType));
 
             NavigationRestrictionsType navigation = context.Model.GetRecord<NavigationRestrictionsType>(target, CapabilitiesConstants.NavigationRestrictions);
             if (navigation != null && !navigation.IsNavigable)
@@ -425,12 +425,12 @@ namespace Microsoft.OpenApi.OData.Generator
 
             IList<IOpenApiAny> selectItems = new List<IOpenApiAny>();
 
-            foreach (var property in entityType.StructuralProperties())
+            foreach (var property in structureType.StructuralProperties())
             {
                 selectItems.Add(new OpenApiString(property.Name));
             }
 
-            foreach (var property in entityType.NavigationProperties())
+            foreach (var property in structureType.NavigationProperties())
             {
                 if (navigation != null && navigation.IsRestrictedProperty(property.Name))
                 {
@@ -488,13 +488,13 @@ namespace Microsoft.OpenApi.OData.Generator
         /// </summary>
         /// <param name="context">The OData context.</param>
         /// <param name="target">The edm entity path.</param>
-        /// <param name="entityType">The edm entity path.</param>
+        /// <param name="structureType">The edm structured path.</param>
         /// <returns>The created <see cref="OpenApiParameter"/> or null.</returns>
-        public static OpenApiParameter CreateExpand(this ODataContext context, IEdmVocabularyAnnotatable target, IEdmEntityType entityType)
+        public static OpenApiParameter CreateExpand(this ODataContext context, IEdmVocabularyAnnotatable target, IEdmStructuredType structureType)
         {
             Utils.CheckArgumentNull(context, nameof(context));
             Utils.CheckArgumentNull(target, nameof(target));
-            Utils.CheckArgumentNull(entityType, nameof(entityType));
+            Utils.CheckArgumentNull(structureType, nameof(structureType));
 
             ExpandRestrictionsType expand = context.Model.GetRecord<ExpandRestrictionsType>(target, CapabilitiesConstants.ExpandRestrictions);
             if (expand != null && !expand.IsExpandable)
@@ -507,7 +507,7 @@ namespace Microsoft.OpenApi.OData.Generator
                 new OpenApiString("*")
             };
 
-            foreach (var property in entityType.NavigationProperties())
+            foreach (var property in structureType.NavigationProperties())
             {
                 if (expand != null && expand.IsNonExpandableProperty(property.Name))
                 {
