@@ -36,10 +36,6 @@ namespace Microsoft.OpenApi.OData.Operation
         {
             base.SetParameters(operation);
 
-            //var navSourceEntityType = NavigationSource.EntityType();
-            //var operationEntityType = EdmOperation.ReturnType.AsEntityReference().EntityType();
-            //var a = EdmOperation.ReturnType.AsEntity().EntityDefinition();
-
             IEdmStructuredType structuredType = EdmOperation.ReturnType.AsEntity().EntityDefinition();
 
             if (EdmOperation.ReturnType.Definition.TypeKind == EdmTypeKind.Collection)
