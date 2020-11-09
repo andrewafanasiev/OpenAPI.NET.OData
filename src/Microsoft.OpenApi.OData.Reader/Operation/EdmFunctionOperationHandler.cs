@@ -36,15 +36,57 @@ namespace Microsoft.OpenApi.OData.Operation
         {
             base.SetParameters(operation);
 
+            OpenApiParameter parameter;
             IEdmStructuredType structuredType = EdmOperation.ReturnType.AsEntity().EntityDefinition();
 
             if (EdmOperation.ReturnType.Definition.TypeKind == EdmTypeKind.Collection)
             {
                 structuredType = (IEdmStructuredType) ((IEdmCollectionType) EdmOperation.ReturnType.Definition).ElementType.Definition;
+
+                parameter = Context.CreateTop(Function);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
+
+                // $skip
+                parameter = Context.CreateSkip(Function);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
+
+                // $search
+                parameter = Context.CreateSearch(Function);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
+
+                // $filter
+                parameter = Context.CreateFilter(Function);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
+
+                // $count
+                parameter = Context.CreateCount(Function);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
+
+                // $order
+                parameter = Context.CreateOrderBy(Function, structuredType);
+                if (parameter != null)
+                {
+                    operation.Parameters.Add(parameter);
+                }
             }
 
             // $select
-            OpenApiParameter parameter = Context.CreateSelect(Function, structuredType);
+            parameter = Context.CreateSelect(Function, structuredType);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
