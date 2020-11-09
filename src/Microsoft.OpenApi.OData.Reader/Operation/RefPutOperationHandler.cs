@@ -5,7 +5,6 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Generator;
@@ -65,39 +64,10 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         protected override void SetResponses(OpenApiOperation operation)
         {
-            OpenApiSchema schema = null;
-
-            if (Context.Settings.EnableDerivedTypesReferencesForResponses)
-            {
-                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(NavigationProperty.ToEntityType(), Context.Model);
-            }
-
-            if (schema == null)
-            {
-                schema = new OpenApiSchema
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.Schema,
-                        Id = NavigationProperty.ToEntityType().FullName()
-                    }
-                };
-            }
-
             operation.Responses = new OpenApiResponses
             {
-                {
-                    Constants.StatusCode204,
-                    new OpenApiResponse
-                    {
-                        Description = "Modified navigation property ref values",
-                        Content = new Dictionary<string, OpenApiMediaType>
-                        {
-                            {Constants.ApplicationJsonMediaType, new OpenApiMediaType {Schema = schema}}
-                        }
-                    }
-                },
-                {Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse()}
+                { Constants.StatusCode204, Constants.StatusCode204.GetResponse() },
+                { Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse() }
             };
 
             base.SetResponses(operation);
