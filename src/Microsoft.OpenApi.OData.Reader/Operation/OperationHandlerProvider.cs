@@ -69,13 +69,14 @@ namespace Microsoft.OpenApi.OData.Operation
             };
 
             // navigatoin property ref (Get/Post/Patch/Delete)
-            _handlers[ODataPathKind.Ref] = new Dictionary<OperationType, IOperationHandler>
-            {
-                {OperationType.Get, new RefGetOperationHandler() },
-                {OperationType.Put, new RefPutOperationHandler() },
-                {OperationType.Post, new RefPostOperationHandler() },
-                {OperationType.Delete, new RefDeleteOperationHandler() }
-            };
+            //_handlers[ODataPathKind.Ref] = new Dictionary<OperationType, IOperationHandler>
+            //{
+            //    {OperationType.Get, new RefGetOperationHandler() },
+            //    {OperationType.Put, new RefPutOperationHandler() },
+            //    {OperationType.Post, new RefPostOperationHandler() },
+            //    {OperationType.Delete, new RefDeleteOperationHandler() }
+            //};
+            _handlers[ODataPathKind.Ref] = null;
         }
 
         /// <inheritdoc/>
