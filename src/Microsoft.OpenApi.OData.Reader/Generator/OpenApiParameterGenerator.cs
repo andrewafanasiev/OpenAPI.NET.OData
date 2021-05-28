@@ -30,7 +30,7 @@ namespace Microsoft.OpenApi.OData.Generator
         public static IDictionary<string, OpenApiParameter> CreateParameters(this ODataContext context)
         {
             Utils.CheckArgumentNull(context, nameof(context));
-            
+
             // It allows defining query options and headers that can be reused across operations of the service.
             // The value of parameters is a map of Parameter Objects.
             return new Dictionary<string, OpenApiParameter>
@@ -74,13 +74,22 @@ namespace Microsoft.OpenApi.OData.Generator
             int skip = function.IsBound ? 1 : 0;
             foreach (IEdmOperationParameter edmParameter in function.Parameters.Skip(skip))
             {
+                if (parameterNameMapping != null)
+                {
+                    if (!parameterNameMapping.ContainsKey(edmParameter.Name))
+                    {
+                        continue;
+                    }
+                }
+
+                OpenApiParameter parameter;
                 // Structured or collection-valued parameters are represented as a parameter alias
                 // in the path template and the parameters array contains a Parameter Object for
                 // the parameter alias as a query option of type string.
                 if (edmParameter.Type.IsStructured() ||
                     edmParameter.Type.IsCollection())
                 {
-                    parameters.Add(new OpenApiParameter
+                    parameter = new OpenApiParameter
                     {
                         Name = parameterNameMapping == null ? edmParameter.Name : parameterNameMapping[edmParameter.Name],
                         In = ParameterLocation.Query, // as query option
@@ -96,19 +105,26 @@ namespace Microsoft.OpenApi.OData.Generator
 
                         // The parameter description describes the format this URL-encoded JSON object or array, and/or reference to [OData-URL].
                         Description = "The URL-encoded JSON " + (edmParameter.Type.IsStructured() ? "array" : "object")
-                    });
+                    };
                 }
                 else
                 {
                     // Primitive parameters use the same type mapping as described for primitive properties.
-                    parameters.Add(new OpenApiParameter
+                    parameter = new OpenApiParameter
                     {
                         Name = parameterNameMapping == null ? edmParameter.Name : parameterNameMapping[edmParameter.Name],
                         In = ParameterLocation.Path,
                         Required = true,
                         Schema = context.CreateEdmTypeSchema(edmParameter.Type)
-                    });
+                    };
                 }
+
+                if (parameterNameMapping != null)
+                {
+                    parameter.Description = $"Usage: {edmParameter.Name}={{{parameterNameMapping[edmParameter.Name]}}}";
+                }
+
+                parameters.Add(parameter);
             }
 
             return parameters;
@@ -134,7 +150,10 @@ namespace Microsoft.OpenApi.OData.Generator
             if (keys.Count() == 1)
             {
                 string keyName = keys.First().Name;
-                if (context.Settings.PrefixEntityTypeNameBeforeKey)
+
+                // If dictionary parameterNameMapping is defined, there's no need of setting the
+                // keyName, we will retrieve this from the dictionary key.
+                if (context.Settings.PrefixEntityTypeNameBeforeKey && parameterNameMapping == null)
                 {
                     keyName = entityType.Name + "-" + keys.First().Name;
                 }
@@ -166,6 +185,11 @@ namespace Microsoft.OpenApi.OData.Generator
                         Description = "key: " + keyProperty.Name + " of " + entityType.Name,
                         Schema = context.CreateEdmTypeSchema(keyProperty.Type)
                     };
+
+                    if (keySegment.KeyMappings != null)
+                    {
+                        parameter.Description = parameter.Description + $", {keyProperty.Name}={{{parameter.Name}}}";
+                    }
 
                     parameter.Extensions.Add(Constants.xMsKeyType, new OpenApiString(entityType.Name));
                     parameters.Add(parameter);

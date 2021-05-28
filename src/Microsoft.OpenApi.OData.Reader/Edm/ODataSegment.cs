@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.OData.Edm;
+using Microsoft.OpenApi.Models;
 
 namespace Microsoft.OpenApi.OData.Edm
 {
@@ -14,6 +15,11 @@ namespace Microsoft.OpenApi.OData.Edm
     /// </summary>
     public enum ODataSegmentKind
     {
+        /// <summary>
+        /// $metadata
+        /// </summary>
+        Metadata,
+
         /// <summary>
         /// Navigation source (entity set or singleton )
         /// </summary>
@@ -47,7 +53,22 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <summary>
         /// $ref
         /// </summary>
-        Ref
+        Ref,
+
+        /// <summary>
+        /// Stream content -> $value
+        /// </summary>
+        StreamContent,
+
+        /// <summary>
+        /// Stream property
+        /// </summary>
+        StreamProperty,
+
+        /// <summary>
+        /// $count
+        /// </summary>
+        DollarCount,
     }
 
     /// <summary>

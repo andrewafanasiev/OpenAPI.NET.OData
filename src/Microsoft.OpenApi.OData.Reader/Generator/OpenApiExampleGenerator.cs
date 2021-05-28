@@ -34,7 +34,11 @@ namespace Microsoft.OpenApi.OData.Generator
 
             // Each entity type, complex type, enumeration type, and type definition directly
             // or indirectly used in the paths field is represented as a name / value pair of the schemas map.
-            foreach (var element in context.Model.SchemaElements.Where(c => !c.Namespace.StartsWith("Org.OData.")))
+            // Ideally this would be driven off the types used in the paths, but in practice, it is simply
+            // all of the types present in the model.
+            IEnumerable<IEdmSchemaElement> elements = context.Model.GetAllElements();
+
+            foreach (var element in elements)
             {
                 switch (element.SchemaElementKind)
                 {
@@ -171,8 +175,11 @@ namespace Microsoft.OpenApi.OData.Generator
                     array.Add(GetTypeNameForExample(elementType));
                     return array;
 
-                case EdmTypeKind.Untyped:
                 case EdmTypeKind.TypeDefinition:
+                    var typedef = edmTypeReference.AsTypeDefinition().TypeDefinition();
+                    return GetTypeNameForExample(new EdmPrimitiveTypeReference(typedef.UnderlyingType, edmTypeReference.IsNullable));
+
+                case EdmTypeKind.Untyped:
                 case EdmTypeKind.EntityReference:
                 default:
                     throw new OpenApiException("Not support for the type kind " + edmTypeReference.TypeKind());

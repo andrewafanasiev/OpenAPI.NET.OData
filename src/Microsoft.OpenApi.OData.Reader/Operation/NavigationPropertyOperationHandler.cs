@@ -62,7 +62,8 @@ namespace Microsoft.OpenApi.OData.Operation
             NavigationProperty = path.OfType<ODataNavigationPropertySegment>().Last().NavigationProperty;
 
             NavigationPropertyPath = string.Join("/",
-                Path.Segments.Where(s => !(s is ODataKeySegment || s is ODataNavigationSourceSegment)).Select(e => e.Identifier));
+                Path.Segments.Where(s => !(s is ODataKeySegment || s is ODataNavigationSourceSegment
+                                        || s is ODataStreamContentSegment || s is ODataStreamPropertySegment)).Select(e => e.Identifier));
 
             IEdmEntitySet entitySet = NavigationSource as IEdmEntitySet;
             IEdmSingleton singleton = NavigationSource as IEdmSingleton;
@@ -81,6 +82,15 @@ namespace Microsoft.OpenApi.OData.Operation
             {
                 Restriction = navigation.RestrictedProperties.FirstOrDefault(r => r.NavigationProperty != null && r.NavigationProperty == NavigationPropertyPath);
             }
+        }
+
+        /// <inheritdoc/>
+        protected override void SetBasicInfo(OpenApiOperation operation)
+        {
+            // Description
+            operation.Description = Context.Model.GetDescriptionAnnotation(NavigationProperty);
+
+            base.SetBasicInfo(operation);
         }
 
         /// <inheritdoc/>
@@ -115,7 +125,7 @@ namespace Microsoft.OpenApi.OData.Operation
                     }
                 }
             }
-            
+
             string name = string.Join(".", items);
             OpenApiTag tag = new OpenApiTag
             {

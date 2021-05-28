@@ -332,13 +332,16 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
   <edmx:DataServices>
     <Schema Namespace=""NS"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
       <EntityType Name=""Customer"">
+        <Annotation Term=""Org.OData.Core.V1.Description"" String=""A business customer."" />
         <Key>
           <PropertyRef Name=""ID"" />
         </Key>
         <Property Name=""ID"" Type=""Edm.Int32"" Nullable=""false"" />
       </EntityType>
       <EntityContainer Name =""Default"">
-         <EntitySet Name=""Customers"" EntityType=""NS.Customer"" />
+        <EntitySet Name=""Customers"" EntityType=""NS.Customer"">
+            <Annotation Term=""Org.OData.Core.V1.Description"" String=""Collection of business customers."" />
+        </EntitySet>
       </EntityContainer>
       <Annotations Target=""NS.Default/Customers"">
         {0}
@@ -346,12 +349,9 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>";
+
             string modelText = string.Format(template, annotation);
-
-            IEdmModel model;
-            IEnumerable<EdmError> errors;
-
-            bool result = CsdlReader.TryParse(XElement.Parse(modelText).CreateReader(), out model, out errors);
+            bool result = CsdlReader.TryParse(XElement.Parse(modelText).CreateReader(), out IEdmModel model, out _);
             Assert.True(result);
             return model;
         }

@@ -16,6 +16,16 @@ namespace Microsoft.OpenApi.OData.Common
         public static string ApplicationJsonMediaType = "application/json";
 
         /// <summary>
+        /// application/xml
+        /// </summary>
+        public static string ApplicationXmlMediaType = "application/xml";
+
+        /// <summary>
+        /// application/octet-stream
+        /// </summary>
+        public static string ApplicationOctetStreamMediaType = "application/octet-stream";
+
+        /// <summary>
         /// Status code: 200
         /// </summary>
         public static string StatusCode200 = "200";
