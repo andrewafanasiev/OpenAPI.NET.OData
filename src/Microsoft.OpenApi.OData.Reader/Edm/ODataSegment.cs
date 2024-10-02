@@ -5,7 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.OData.Edm;
+using Microsoft.OpenApi.OData.Common;
+using Microsoft.OData.Edm.Vocabularies;
 
 namespace Microsoft.OpenApi.OData.Edm
 {
@@ -14,6 +17,11 @@ namespace Microsoft.OpenApi.OData.Edm
     /// </summary>
     public enum ODataSegmentKind
     {
+        /// <summary>
+        /// $metadata
+        /// </summary>
+        Metadata,
+
         /// <summary>
         /// Navigation source (entity set or singleton )
         /// </summary>
@@ -47,7 +55,27 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <summary>
         /// $ref
         /// </summary>
-        Ref
+        Ref,
+
+        /// <summary>
+        /// Stream content -> $value
+        /// </summary>
+        StreamContent,
+
+        /// <summary>
+        /// Stream property
+        /// </summary>
+        StreamProperty,
+
+        /// <summary>
+        /// $count
+        /// </summary>
+        DollarCount,
+
+        /// <summary>
+        /// Path Segment for a property of type complex
+        /// </summary>
+        ComplexProperty,
     }
 
     /// <summary>
@@ -79,6 +107,17 @@ namespace Microsoft.OpenApi.OData.Edm
         {
             return GetPathItemName(settings, new HashSet<string>());
         }
+        /// <summary>
+        /// Provides a suffix for the operation id based on the operation path.
+        /// </summary>
+        /// <param name="path">Path to use to deduplicate.</param>
+        /// <param name="settings">The settings.</param>
+        ///<returns>The suffix.</returns>
+        public string GetPathHash(OpenApiConvertSettings settings, ODataPath path = default)
+        {
+            var suffix = string.Join("/", path?.Segments.Select(x => x.Identifier).Distinct() ?? Enumerable.Empty<string>());
+            return (GetPathItemName(settings) + suffix).GetHashSHA256().Substring(0, 4);
+        }
 
         /// <summary>
         /// Gets the path item name for this segment.
@@ -87,5 +126,10 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <param name="parameters">The existing parameters.</param>
         /// <returns>The path item name.</returns>
         public abstract string GetPathItemName(OpenApiConvertSettings settings, HashSet<string> parameters);
+
+        /// <summary>
+        /// Returns the list of <see cref="IEdmVocabularyAnnotatable"/> this segment refers to.
+        /// </summary>
+        public abstract IEnumerable<IEdmVocabularyAnnotatable> GetAnnotables();
     }
 }

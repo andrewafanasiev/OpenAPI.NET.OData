@@ -1,21 +1,21 @@
-﻿swagger: '2.0'
+swagger: '2.0'
 info:
   title: 'OData Service for namespace '
   description: This OData service is located at http://localhost
-  version: 1.0.1
+  version: 1.0.0
 host: localhost
 schemes:
   - http
 paths: { }
 definitions:
-  odata.error:
+  ODataErrors.ODataError:
     required:
       - error
     type: object
     properties:
       error:
-        $ref: '#/definitions/odata.error.main'
-  odata.error.main:
+        $ref: '#/definitions/ODataErrors.MainError'
+  ODataErrors.MainError:
     required:
       - code
       - message
@@ -25,16 +25,16 @@ definitions:
         type: string
       message:
         type: string
+        x-ms-primary-error-message: true
       target:
         type: string
       details:
         type: array
         items:
-          $ref: '#/definitions/odata.error.detail'
-      innererror:
-        description: The structure of this object is service-specific
-        type: object
-  odata.error.detail:
+          $ref: '#/definitions/ODataErrors.ErrorDetails'
+      innerError:
+        $ref: '#/definitions/ODataErrors.InnerError'
+  ODataErrors.ErrorDetails:
     required:
       - code
       - message
@@ -46,6 +46,32 @@ definitions:
         type: string
       target:
         type: string
+  ODataErrors.InnerError:
+    description: The structure of this object is service-specific
+    type: object
+  ODataCountResponse:
+    format: int32
+    type: integer
+  ReferenceUpdate:
+    type: object
+    properties:
+      '@odata.id':
+        type: string
+      '@odata.type':
+        type: string
+  ReferenceCreate:
+    type: object
+    properties:
+      '@odata.id':
+        type: string
+    additionalProperties:
+      type: object
+  ReferenceNumeric:
+    enum:
+      - '-INF'
+      - INF
+      - NaN
+    type: string
 parameters:
   top:
     in: query
@@ -74,8 +100,26 @@ parameters:
     name: $search
     description: Search items by search phrases
     type: string
+  refPostBody:
+    in: body
+    name: body
+    description: New navigation property ref value
+    required: true
+    schema:
+      $ref: '#/definitions/ReferenceCreate'
+  refPutBody:
+    in: body
+    name: body
+    description: New navigation property ref values
+    required: true
+    schema:
+      $ref: '#/definitions/ReferenceUpdate'
 responses:
   error:
     description: error
     schema:
-      $ref: '#/definitions/odata.error'
+      $ref: '#/definitions/ODataErrors.ODataError'
+  ODataCountResponse:
+    description: The count of the resource
+    schema:
+      $ref: '#/definitions/ODataCountResponse'

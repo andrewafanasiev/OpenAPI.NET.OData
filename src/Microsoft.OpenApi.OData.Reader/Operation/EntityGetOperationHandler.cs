@@ -24,20 +24,45 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         public override OperationType OperationType => OperationType.Get;
 
+        private ReadRestrictionsType _readRestrictions;
+
+        protected override void Initialize(ODataContext context, ODataPath path)
+        {
+            base.Initialize(context, path);
+
+            _readRestrictions = Context.Model.GetRecord<ReadRestrictionsType>(TargetPath, CapabilitiesConstants.ReadRestrictions);
+            var entityReadRestrictions = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
+            _readRestrictions?.MergePropertiesIfNull(entityReadRestrictions);
+            _readRestrictions ??= entityReadRestrictions;
+        }
+
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
-            // Summary
-            operation.Summary = "Get entity from " + EntitySet.Name + " by key";
+            IEdmEntityType entityType = EntitySet.EntityType;
+            ODataKeySegment keySegment = Path.LastSegment as ODataKeySegment;
+
+            // Description
+            string placeHolder = "Get entity from " + EntitySet.Name + " by key";
+            if (keySegment.IsAlternateKey) 
+            {
+                placeHolder = $"{placeHolder} ({keySegment.Identifier})";
+            }
+            operation.Summary = _readRestrictions?.ReadByKeyRestrictions?.Description ?? placeHolder;
+            operation.Description = _readRestrictions?.ReadByKeyRestrictions?.LongDescription ?? Context.Model.GetDescriptionAnnotation(entityType);
 
             // OperationId
             if (Context.Settings.EnableOperationId)
-            {
-                string typeName = EntitySet.EntityType().Name;
-                operation.OperationId = EntitySet.Name + "." + typeName + ".Get" + Utils.UpperFirstChar(typeName);
+            { 
+                string typeName = entityType.Name;
+                string operationName = $"Get{Utils.UpperFirstChar(typeName)}";
+                if (keySegment.IsAlternateKey)
+                {
+                    string alternateKeyName = string.Join("", keySegment.Identifier.Split(',').Select(static x => Utils.UpperFirstChar(x)));
+                    operationName = $"{operationName}By{alternateKeyName}";
+                }              
+                operation.OperationId = $"{EntitySet.Name}.{typeName}.{operationName}";
             }
-
-            base.SetBasicInfo(operation);
         }
 
         /// <inheritdoc/>
@@ -68,23 +93,24 @@ namespace Microsoft.OpenApi.OData.Operation
 
             if (Context.Settings.EnableDerivedTypesReferencesForResponses)
             {
-                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(EntitySet.EntityType(), Context.Model);
+                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(EntitySet.EntityType, Context.Model);
             }
 
             if (Context.Settings.ShowLinks)
             {
-                links = Context.CreateLinks(entityType: EntitySet.EntityType(), entityName: EntitySet.Name,
-                        entityKind: EntitySet.ContainerElementKind.ToString(), parameters: operation.Parameters);
+                links = Context.CreateLinks(entityType: EntitySet.EntityType, entityName: EntitySet.Name,
+                        entityKind: EntitySet.ContainerElementKind.ToString(), path: Path, parameters: PathParameters);
             }
 
             if (schema == null)
             {
                 schema = new OpenApiSchema
                 {
+                    UnresolvedReference = true,
                     Reference = new OpenApiReference
                     {
                         Type = ReferenceType.Schema,
-                        Id = EntitySet.EntityType().FullName()
+                        Id = EntitySet.EntityType.FullName()
                     }
                 };
             }
@@ -92,7 +118,7 @@ namespace Microsoft.OpenApi.OData.Operation
             operation.Responses = new OpenApiResponses
             {
                 {
-                    Constants.StatusCode200,
+                    Context.Settings.UseSuccessStatusCodeRange ? Constants.StatusCodeClass2XX : Constants.StatusCode200,
                     new OpenApiResponse
                     {
                         Description = "Retrieved entity",
@@ -110,23 +136,22 @@ namespace Microsoft.OpenApi.OData.Operation
                     }
                 }
             };
-            operation.Responses.Add(Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse());
+            operation.AddErrorResponses(Context.Settings, false);
 
             base.SetResponses(operation);
         }
 
         protected override void SetSecurity(OpenApiOperation operation)
         {
-            ReadRestrictionsType read = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
-            if (read == null)
+            if (_readRestrictions == null)
             {
                 return;
             }
 
-            ReadRestrictionsBase readBase = read;
-            if (read.ReadByKeyRestrictions != null)
+            ReadRestrictionsBase readBase = _readRestrictions;
+            if (_readRestrictions.ReadByKeyRestrictions != null)
             {
-                readBase = read.ReadByKeyRestrictions;
+                readBase = _readRestrictions.ReadByKeyRestrictions;
             }
 
             if (readBase == null && readBase.Permissions == null)
@@ -139,16 +164,15 @@ namespace Microsoft.OpenApi.OData.Operation
 
         protected override void AppendCustomParameters(OpenApiOperation operation)
         {
-            ReadRestrictionsType read = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
-            if (read == null)
+            if (_readRestrictions == null)
             {
                 return;
             }
 
-            ReadRestrictionsBase readBase = read;
-            if (read.ReadByKeyRestrictions != null)
+            ReadRestrictionsBase readBase = _readRestrictions;
+            if (_readRestrictions.ReadByKeyRestrictions != null)
             {
-                readBase = read.ReadByKeyRestrictions;
+                readBase = _readRestrictions.ReadByKeyRestrictions;
             }
 
             if (readBase.CustomHeaders != null)

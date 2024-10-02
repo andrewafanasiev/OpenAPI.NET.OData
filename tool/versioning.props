@@ -14,14 +14,14 @@
   <PropertyGroup>
     <VersionMajor Condition="'$(VersionMajor)' == ''">1</VersionMajor>
     <VersionMinor Condition="'$(VersionMinor)' == ''">0</VersionMinor>
-    <VersionBuild Condition="'$(VersionBuild)' == ''">4</VersionBuild>
+    <VersionBuild Condition="'$(VersionBuild)' == ''">9</VersionBuild>
     <VersionRelease Condition="'$(VersionRelease)' == ''"></VersionRelease>
   </PropertyGroup>
 
   <!-- For NuGet Package Dependencies -->
   <PropertyGroup>
-    <OpenApiCorePackageDependency>[1.1.4, 2.0.0)</OpenApiCorePackageDependency>
-    <ODataEdmPackageDependency>[7.6.1, 8.0.0)</ODataEdmPackageDependency>
+    <OpenApiCorePackageDependency>[1.2.3, 2.0.0)</OpenApiCorePackageDependency>
+    <ODataEdmPackageDependency>[7.10.0, 8.0.0)</ODataEdmPackageDependency>
   </PropertyGroup>
 
   <!--
@@ -32,7 +32,7 @@
     <VersionStartYear Condition="'$(VersionStartYear)' == ''">2020</VersionStartYear>
 	
 	<!--  { Now.Year - 2019 + 1}{MM}{DD} -->
-    <VersionDateCode>$([System.Convert]::ToInt16('$([MSBuild]::Add(1, $([MSBuild]::Subtract($([System.DateTime]::Now.Year), $(VersionStartYear)))))$([System.DateTime]::Now.ToString("MMdd"))'))</VersionDateCode>
+    <VersionDateCode>$([System.Convert]::ToInt32('$([MSBuild]::Add(1, $([MSBuild]::Subtract($([System.DateTime]::Now.Year), $(VersionStartYear)))))$([System.DateTime]::Now.ToString("MMdd"))'))</VersionDateCode>
 	
     <VersionRevision Condition="'$(VersionRevision)' == '' OR '$(VersionRevision)' == '0'">$([System.Convert]::ToString($(VersionDateCode)))</VersionRevision>
   </PropertyGroup>

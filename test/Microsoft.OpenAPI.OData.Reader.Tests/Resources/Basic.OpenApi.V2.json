@@ -1,9 +1,9 @@
-﻿{
+{
   "swagger": "2.0",
   "info": {
     "title": "OData Service for namespace DefaultNs",
     "description": "This OData service is located at http://localhost",
-    "version": "1.0.1"
+    "version": "1.0.0"
   },
   "host": "localhost",
   "schemes": [
@@ -17,9 +17,6 @@
         ],
         "summary": "Get entities from City",
         "operationId": "City.City.ListCity",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -76,19 +73,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of City",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/DefaultNs.City"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/DefaultNs.CityCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -130,7 +115,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of City entities."
     },
     "/City({Name})": {
       "get": {
@@ -146,7 +132,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of City",
+            "description": "The unique identifier of City",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "City"
@@ -202,7 +188,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of City",
+            "description": "The unique identifier of City",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "City"
@@ -237,7 +223,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of City",
+            "description": "The unique identifier of City",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "City"
@@ -258,7 +244,34 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of City entities."
+    },
+    "/City/$count": {
+      "get": {
+        "tags": [
+          "City.City"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "City.GetCount-8728",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/CountryOrRegion": {
       "get": {
@@ -267,9 +280,6 @@
         ],
         "summary": "Get entities from CountryOrRegion",
         "operationId": "CountryOrRegion.CountryOrRegion.ListCountryOrRegion",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -326,19 +336,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of CountryOrRegion",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/DefaultNs.CountryOrRegion"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/DefaultNs.CountryOrRegionCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -380,7 +378,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of CountryOrRegion entities."
     },
     "/CountryOrRegion({Name})": {
       "get": {
@@ -396,7 +395,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of CountryOrRegion",
+            "description": "The unique identifier of CountryOrRegion",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "CountryOrRegion"
@@ -452,7 +451,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of CountryOrRegion",
+            "description": "The unique identifier of CountryOrRegion",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "CountryOrRegion"
@@ -487,7 +486,7 @@
           {
             "in": "path",
             "name": "Name",
-            "description": "key: Name of CountryOrRegion",
+            "description": "The unique identifier of CountryOrRegion",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "CountryOrRegion"
@@ -508,7 +507,34 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of CountryOrRegion entities."
+    },
+    "/CountryOrRegion/$count": {
+      "get": {
+        "tags": [
+          "CountryOrRegion.CountryOrRegion"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "CountryOrRegion.GetCount-daf5",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Me": {
       "get": {
@@ -591,7 +617,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the Person singleton."
     },
     "/People": {
       "get": {
@@ -599,10 +626,8 @@
           "People.Person"
         ],
         "summary": "Get entities from People",
+        "description": "People's description.",
         "operationId": "People.Person.ListPerson",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -668,19 +693,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of Person",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/DefaultNs.Person"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/DefaultNs.PersonCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -722,7 +735,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of Person entities."
     },
     "/People({UserName})": {
       "get": {
@@ -738,7 +752,7 @@
           {
             "in": "path",
             "name": "UserName",
-            "description": "key: UserName of Person",
+            "description": "The unique identifier of Person",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "Person"
@@ -797,7 +811,7 @@
           {
             "in": "path",
             "name": "UserName",
-            "description": "key: UserName of Person",
+            "description": "The unique identifier of Person",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "Person"
@@ -832,7 +846,7 @@
           {
             "in": "path",
             "name": "UserName",
-            "description": "key: UserName of Person",
+            "description": "The unique identifier of Person",
             "required": true,
             "type": "string",
             "x-ms-docs-key-type": "Person"
@@ -853,7 +867,34 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of Person entities."
+    },
+    "/People/$count": {
+      "get": {
+        "tags": [
+          "People.Person"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "People.GetCount-dd8d",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     }
   },
   "definitions": {
@@ -971,18 +1012,18 @@
         }
       }
     },
-    "odata.error": {
+    "DefaultNs.ODataErrors.ODataError": {
       "required": [
         "error"
       ],
       "type": "object",
       "properties": {
         "error": {
-          "$ref": "#/definitions/odata.error.main"
+          "$ref": "#/definitions/DefaultNs.ODataErrors.MainError"
         }
       }
     },
-    "odata.error.main": {
+    "DefaultNs.ODataErrors.MainError": {
       "required": [
         "code",
         "message"
@@ -993,7 +1034,8 @@
           "type": "string"
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "x-ms-primary-error-message": true
         },
         "target": {
           "type": "string"
@@ -1001,16 +1043,15 @@
         "details": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/odata.error.detail"
+            "$ref": "#/definitions/DefaultNs.ODataErrors.ErrorDetails"
           }
         },
-        "innererror": {
-          "description": "The structure of this object is service-specific",
-          "type": "object"
+        "innerError": {
+          "$ref": "#/definitions/DefaultNs.ODataErrors.InnerError"
         }
       }
     },
-    "odata.error.detail": {
+    "DefaultNs.ODataErrors.ErrorDetails": {
       "required": [
         "code",
         "message"
@@ -1027,6 +1068,92 @@
           "type": "string"
         }
       }
+    },
+    "DefaultNs.ODataErrors.InnerError": {
+      "description": "The structure of this object is service-specific",
+      "type": "object"
+    },
+    "ODataCountResponse": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "DefaultNs.PersonCollectionResponse": {
+      "title": "Collection of Person",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DefaultNs.Person"
+          }
+        }
+      }
+    },
+    "DefaultNs.CityCollectionResponse": {
+      "title": "Collection of City",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DefaultNs.City"
+          }
+        }
+      }
+    },
+    "DefaultNs.CountryOrRegionCollectionResponse": {
+      "title": "Collection of CountryOrRegion",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DefaultNs.CountryOrRegion"
+          }
+        }
+      }
+    },
+    "DefaultNs.AddressCollectionResponse": {
+      "title": "Collection of DefaultNs.Address",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DefaultNs.Address"
+          }
+        }
+      }
+    },
+    "ReferenceUpdate": {
+      "type": "object",
+      "properties": {
+        "@odata.id": {
+          "type": "string"
+        },
+        "@odata.type": {
+          "type": "string"
+        }
+      }
+    },
+    "ReferenceCreate": {
+      "type": "object",
+      "properties": {
+        "@odata.id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "ReferenceNumeric": {
+      "enum": [
+        "-INF",
+        "INF",
+        "NaN"
+      ],
+      "type": "string"
     }
   },
   "parameters": {
@@ -1061,13 +1188,61 @@
       "name": "$search",
       "description": "Search items by search phrases",
       "type": "string"
+    },
+    "refPostBody": {
+      "in": "body",
+      "name": "body",
+      "description": "New navigation property ref value",
+      "required": true,
+      "schema": {
+        "$ref": "#/definitions/ReferenceCreate"
+      }
+    },
+    "refPutBody": {
+      "in": "body",
+      "name": "body",
+      "description": "New navigation property ref values",
+      "required": true,
+      "schema": {
+        "$ref": "#/definitions/ReferenceUpdate"
+      }
     }
   },
   "responses": {
     "error": {
       "description": "error",
       "schema": {
-        "$ref": "#/definitions/odata.error"
+        "$ref": "#/definitions/DefaultNs.ODataErrors.ODataError"
+      }
+    },
+    "ODataCountResponse": {
+      "description": "The count of the resource",
+      "schema": {
+        "$ref": "#/definitions/ODataCountResponse"
+      }
+    },
+    "DefaultNs.PersonCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/DefaultNs.PersonCollectionResponse"
+      }
+    },
+    "DefaultNs.CityCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/DefaultNs.CityCollectionResponse"
+      }
+    },
+    "DefaultNs.CountryOrRegionCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/DefaultNs.CountryOrRegionCollectionResponse"
+      }
+    },
+    "DefaultNs.AddressCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/DefaultNs.AddressCollectionResponse"
       }
     }
   },

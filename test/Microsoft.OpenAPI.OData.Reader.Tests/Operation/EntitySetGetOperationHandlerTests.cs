@@ -4,12 +4,10 @@
 // ------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
-using Microsoft.OData.Edm.Validation;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Edm;
@@ -23,11 +21,11 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         private EntitySetGetOperationHandler _operationHandler = new EntitySetGetOperationHandler();
 
         [Theory]
-        [InlineData(true, true)]
-        [InlineData(false, true)]
-        [InlineData(false, false)]
-        [InlineData(true, false)]
-        public void CreateEntitySetGetOperationReturnsCorrectOperation(bool enableOperationId, bool enablePagination)
+        [InlineData(true, true, true)]
+        [InlineData(false, true, true)]
+        [InlineData(false, false, false)]
+        [InlineData(true, false, false)]
+        public void CreateEntitySetGetOperationReturnsCorrectOperation(bool enableOperationId, bool enablePagination, bool useHTTPStatusCodeClass2XX)
         {
             // Arrange
             IEdmModel model = GetEdmModel("");
@@ -35,7 +33,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
                 EnableOperationId = enableOperationId,
-                EnablePagination = enablePagination
+                EnablePagination = enablePagination,
+                UseSuccessStatusCodeRange = useHTTPStatusCodeClass2XX
             };
             ODataContext context = new ODataContext(model, settings);
             ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet));
@@ -45,7 +44,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             // Assert
             Assert.NotNull(get);
-            Assert.Equal("Get entities from " + entitySet.Name, get.Summary);
+            Assert.Equal("List customers.", get.Summary);
+            Assert.Equal("Returns a list of customers.", get.Description);
             Assert.NotNull(get.Tags);
             var tag = Assert.Single(get.Tags);
             Assert.Equal("Customers.Customer", tag.Name);
@@ -56,8 +56,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             Assert.NotNull(get.Responses);
             Assert.Equal(2, get.Responses.Count);
 
-            //Assert.NotNull(get.Extensions);
-            //Assert.True(get.Extensions.ContainsKey(Constants.xMsPageable));
+            var statusCode = useHTTPStatusCodeClass2XX ? "2XX" : "200";
+            Assert.Equal(new string[] { statusCode, "default" }, get.Responses.Select(e => e.Key));
 
             if (enableOperationId)
             {
@@ -331,27 +331,85 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             const string template = @"<edmx:Edmx Version=""4.0"" xmlns:edmx=""http://docs.oasis-open.org/odata/ns/edmx"">
   <edmx:DataServices>
     <Schema Namespace=""NS"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
+      <ComplexType Name=""Address"">
+        <Property Name=""City"" Type=""Edm.String"" />
+      </ComplexType>
       <EntityType Name=""Customer"">
+        <Annotation Term=""Org.OData.Core.V1.Description"" String=""A business customer."" />
         <Key>
           <PropertyRef Name=""ID"" />
         </Key>
         <Property Name=""ID"" Type=""Edm.Int32"" Nullable=""false"" />
+        <Property Name=""BillingAddress"" Type=""NS.Address"">
+            <Annotation Term=""Org.OData.Capabilities.V1.ReadRestrictions"">
+                <Record>
+                    <PropertyValue Property=""Description"" String=""Get the BillingAddress."" />            
+                    <PropertyValue Property=""LongDescription"" String=""Get the BillingAddress value."" />            
+                </Record>
+            </Annotation>
+            <Annotation Term=""Org.OData.Capabilities.V1.UpdateRestrictions"">
+                <Record>
+                    <PropertyValue Property=""Description"" String=""Update the BillingAddress."" />            
+                    <PropertyValue Property=""LongDescription"" String=""Update the BillingAddress value."" />            
+                </Record>
+            </Annotation>            
+        </Property>
+        <Property Name=""MailingAddress"" Type=""NS.Address"" Nullable=""false"" />
+        <Property Name=""AlternativeAddresses"" Type=""Collection(NS.Address)"" Nullable=""false"">
+            <Annotation Term=""Org.OData.Capabilities.V1.ReadRestrictions"">
+                <Record>
+                    <PropertyValue Property=""Description"" String=""Get the AlternativeAddresses."" />            
+                    <PropertyValue Property=""LongDescription"" String=""Get the AlternativeAddresses value."" />            
+                </Record>
+            </Annotation>
+            <Annotation Term=""Org.OData.Capabilities.V1.UpdateRestrictions"">
+                <Record>
+                    <PropertyValue Property=""Description"" String=""Update the AlternativeAddresses."" />            
+                    <PropertyValue Property=""LongDescription"" String=""Update the AlternativeAddresses value."" />            
+                </Record>
+            </Annotation>        
+        </Property>
       </EntityType>
       <EntityContainer Name =""Default"">
-         <EntitySet Name=""Customers"" EntityType=""NS.Customer"" />
+        <EntitySet Name=""Customers"" EntityType=""NS.Customer"">
+            <Annotation Term=""Org.OData.Core.V1.Description"" String=""Collection of business customers."" />
+        </EntitySet>
       </EntityContainer>
       <Annotations Target=""NS.Default/Customers"">
         {0}
       </Annotations>
+      <Annotations Target=""NS.Default/Customers"">
+        <Annotation Term=""Org.OData.Capabilities.V1.ReadRestrictions"">
+          <Record>
+            <PropertyValue Property=""Description"" String=""List customers."" />
+            <PropertyValue Property=""LongDescription"" String=""Returns a list of customers."" />
+            <PropertyValue Property=""ReadByKeyRestrictions"">
+              <Record>
+                <PropertyValue Property=""Description"" String=""Get customer."" />
+                <PropertyValue Property=""LongDescription"" String=""Returns a single customer."" />
+              </Record>
+            </PropertyValue>
+          </Record>
+        </Annotation>
+        <Annotation Term=""Org.OData.Capabilities.V1.UpdateRestrictions"">
+          <Record>
+            <PropertyValue Property=""Description"" String=""Update customer."" />            
+            <PropertyValue Property=""LongDescription"" String=""Updates a single customer."" />            
+          </Record>
+        </Annotation>
+        <Annotation Term=""Org.OData.Capabilities.V1.DeleteRestrictions"">
+          <Record>
+            <PropertyValue Property=""Description"" String=""Delete customer."" />            
+            <PropertyValue Property=""LongDescription"" String=""Deletes a single customer."" />            
+          </Record>
+        </Annotation>
+      </Annotations>
     </Schema>
   </edmx:DataServices>
 </edmx:Edmx>";
+
             string modelText = string.Format(template, annotation);
-
-            IEdmModel model;
-            IEnumerable<EdmError> errors;
-
-            bool result = CsdlReader.TryParse(XElement.Parse(modelText).CreateReader(), out model, out errors);
+            bool result = CsdlReader.TryParse(XElement.Parse(modelText).CreateReader(), out IEdmModel model, out _);
             Assert.True(result);
             return model;
         }

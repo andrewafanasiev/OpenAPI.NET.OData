@@ -3,12 +3,13 @@
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
+using Microsoft.OpenApi.OData.Edm;
 using Microsoft.OpenApi.OData.Generator;
+using Microsoft.OpenApi.OData.Vocabulary.Capabilities;
 
 namespace Microsoft.OpenApi.OData.Operation
 {
@@ -22,11 +23,22 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         public override OperationType OperationType => OperationType.Post;
 
+        private InsertRestrictionsType _insertRestriction;
+
+        /// <inheritdoc/>
+        protected override void Initialize(ODataContext context, ODataPath path)
+        {
+            base.Initialize(context, path);
+            _insertRestriction = GetRestrictionAnnotation(CapabilitiesConstants.InsertRestrictions) as InsertRestrictionsType;
+        }
+
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
-            // Summary
-            operation.Summary = "Create new navigation property to " + NavigationProperty.Name + " for " + NavigationSource.Name;
+            // Summary and Description
+            string placeHolder = "Create new navigation property to " + NavigationProperty.Name + " for " + NavigationSource.Name;
+            operation.Summary = _insertRestriction?.Description ?? placeHolder;
+            operation.Description = _insertRestriction?.LongDescription;
 
             // OperationId
             if (Context.Settings.EnableOperationId)
@@ -48,31 +60,11 @@ namespace Microsoft.OpenApi.OData.Operation
                 schema = EdmModelHelper.GetDerivedTypesReferenceSchema(NavigationProperty.ToEntityType(), Context.Model);
             }
 
-            if (schema == null)
-            {
-                schema = new OpenApiSchema
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.Schema,
-                        Id = NavigationProperty.ToEntityType().FullName()
-                    }
-                };
-            }
-
             operation.RequestBody = new OpenApiRequestBody
             {
                 Required = true,
                 Description = "New navigation property",
-                Content = new Dictionary<string, OpenApiMediaType>
-                {
-                    {
-                        Constants.ApplicationJsonMediaType, new OpenApiMediaType
-                        {
-                            Schema = schema
-                        }
-                    }
-                }
+                Content = GetContent(schema, _insertRestriction?.RequestContentTypes)
             };
 
             base.SetRequestBody(operation);
@@ -88,68 +80,47 @@ namespace Microsoft.OpenApi.OData.Operation
                 schema = EdmModelHelper.GetDerivedTypesReferenceSchema(NavigationProperty.ToEntityType(), Context.Model);
             }
 
-            if (schema == null)
-            {
-                schema = new OpenApiSchema
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.Schema,
-                        Id = NavigationProperty.ToEntityType().FullName()
-                    }
-                };
-            }
-
             operation.Responses = new OpenApiResponses
             {
                 {
-                    Constants.StatusCode201,
+                    Context.Settings.UseSuccessStatusCodeRange ? Constants.StatusCodeClass2XX : Constants.StatusCode201,
                     new OpenApiResponse
                     {
                         Description = "Created navigation property.",
-                        Content = new Dictionary<string, OpenApiMediaType>
-                        {
-                            {
-                                Constants.ApplicationJsonMediaType,
-                                new OpenApiMediaType
-                                {
-                                    Schema = schema
-                                }
-                            }
-                        }
+                        Content = GetContent(schema, _insertRestriction?.ResponseContentTypes)
                     }
                 }
             };
-            operation.Responses.Add(Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse());
+            operation.AddErrorResponses(Context.Settings, false);
 
             base.SetResponses(operation);
         }
 
         protected override void SetSecurity(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.InsertRestrictions == null)
+            if (_insertRestriction == null)
             {
                 return;
             }
 
-            operation.Security = Context.CreateSecurityRequirements(Restriction.InsertRestrictions.Permissions).ToList();
+            operation.Security = Context.CreateSecurityRequirements(_insertRestriction.Permissions).ToList();
         }
 
         protected override void AppendCustomParameters(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.InsertRestrictions == null)
+            if (_insertRestriction == null)
             {
                 return;
             }
 
-            if (Restriction.InsertRestrictions.CustomHeaders != null)
+            if (_insertRestriction.CustomHeaders != null)
             {
-                AppendCustomParameters(operation, Restriction.InsertRestrictions.CustomHeaders, ParameterLocation.Header);
+                AppendCustomParameters(operation, _insertRestriction.CustomHeaders, ParameterLocation.Header);
             }
 
-            if (Restriction.InsertRestrictions.CustomQueryOptions != null)
+            if (_insertRestriction.CustomQueryOptions != null)
             {
-                AppendCustomParameters(operation, Restriction.InsertRestrictions.CustomQueryOptions, ParameterLocation.Query);
+                AppendCustomParameters(operation, _insertRestriction.CustomQueryOptions, ParameterLocation.Query);
             }
         }
     }

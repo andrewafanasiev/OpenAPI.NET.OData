@@ -80,10 +80,10 @@ namespace Microsoft.OpenApi.OData.Edm
             {
                 Action<IEdmNavigationSource, IDictionary<IEdmEntityType, IList<IEdmNavigationSource>>> action = (ns, dic) =>
                 {
-                    if (!dic.TryGetValue(ns.EntityType(), out IList<IEdmNavigationSource> value))
+                    if (!dic.TryGetValue(ns.EntityType, out IList<IEdmNavigationSource> value))
                     {
                         value = new List<IEdmNavigationSource>();
-                        dic[ns.EntityType()] = value;
+                        dic[ns.EntityType] = value;
                     }
 
                     value.Add(ns);
@@ -126,43 +126,27 @@ namespace Microsoft.OpenApi.OData.Edm
         }
 
         /// <summary>
-        /// Checks if the <paramref name="baseType"/> is assignable to <paramref name="subtype"/>.
-        /// In other words, if <paramref name="subtype"/> is a subtype of <paramref name="baseType"/> or not.
+        /// Find all base types for a given <see cref="IEdmComplexType"/>
         /// </summary>
-        /// <param name="baseType">Type of the base type.</param>
-        /// <param name="subtype">Type of the sub type.</param>
-        /// <returns>true, if the <paramref name="baseType"/> is assignable to <paramref name="subtype"/>. Otherwise returns false.</returns>
-        public static bool IsAssignableFrom(this IEdmEntityType baseType, IEdmEntityType subtype)
+        /// <param name="complexType">The given complex type.</param>
+        /// <returns>All base types or null.</returns>
+        public static IEnumerable<IEdmComplexType> FindAllBaseTypes(this IEdmComplexType complexType)
         {
-            Utils.CheckArgumentNull(baseType, nameof(baseType));
-            Utils.CheckArgumentNull(subtype, nameof(subtype));
-
-            if (baseType.TypeKind != subtype.TypeKind)
+            if (complexType == null)
             {
-                return false;
+                yield return null;
             }
 
-            if (subtype.IsEquivalentTo(baseType))
+            IEdmComplexType current = complexType.BaseComplexType();
+            while (current != null)
             {
-                return true;
+                yield return current;
+                current = current.BaseComplexType();
             }
-
-            IEdmStructuredType structuredSubType = subtype;
-            while (structuredSubType != null)
-            {
-                if (structuredSubType.IsEquivalentTo(baseType))
-                {
-                    return true;
-                }
-
-                structuredSubType = structuredSubType.BaseType;
-            }
-
-            return false;
         }
 
         /// <summary>
-        /// Check whether the operaiton is overload in the model.
+        /// Check whether the operation is overload in the model.
         /// </summary>
         /// <param name="model">The Edm model.</param>
         /// <param name="operation">The test operations.</param>
@@ -172,14 +156,35 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(model, nameof(model));
             Utils.CheckArgumentNull(operation, nameof(operation));
 
-            return model.SchemaElements.OfType<IEdmOperation>()
+            return model.GetAllElements().OfType<IEdmOperation>()
                 .Where(o => o.IsBound == operation.IsBound && o.FullName() == operation.FullName() &&
-                o.Parameters.First().Type.Definition == operation.Parameters.First().Type.Definition
+                o.Parameters.First().Type.Definition.FullTypeName() == operation.Parameters.First().Type.Definition.FullTypeName()
                 ).Count() > 1;
         }
 
         /// <summary>
-        /// Check whether the operaiton import is overload in the model.
+        /// Checks whether operation targets singletons and/or entitysets of the same type.
+        /// </summary>
+        /// <param name="model">The Edm model.</param>
+        /// <param name="operation">The test operations.</param>
+        /// <returns>True/false.</returns>
+        public static bool OperationTargetsMultiplePaths(this IEdmModel model, IEdmOperation operation)
+        {
+            Utils.CheckArgumentNull(model, nameof(model));
+            Utils.CheckArgumentNull(operation, nameof(operation));
+
+            if (!operation.Parameters.Any())
+                return false;
+            
+            IEdmTypeReference bindingParameterType = operation.Parameters.First().Type;
+
+            return model.EntityContainer.EntitySets().Select(static x => x.EntityType)
+                .Concat(model.EntityContainer.Singletons().Select(static x => x.EntityType))
+                .Where(x => x.FullName().Equals(bindingParameterType.FullName(), StringComparison.OrdinalIgnoreCase)).Count() > 1;
+        }
+
+        /// <summary>
+        /// Check whether the operation import is overload in the model.
         /// </summary>
         /// <param name="model">The Edm model.</param>
         /// <param name="operationImport">The test operations.</param>
@@ -197,5 +202,28 @@ namespace Microsoft.OpenApi.OData.Edm
             return model.EntityContainer.OperationImports()
                 .Where(o => o.Operation.IsBound == operationImport.Operation.IsBound && o.Name == operationImport.Name).Count() > 1;
         }
+
+        /// <summary>
+        /// Get all of the elements in the model and its referenced models.
+        /// </summary>
+        /// <returns>All the elements.</returns>
+        public static IEnumerable<IEdmSchemaElement> GetAllElements(this IEdmModel model)
+        {
+            foreach (var element in model.SchemaElements.Where(el =>
+                !ODataConstants.StandardNamespaces.Any(std => el.Namespace.StartsWith(std))))
+            {
+                yield return element;
+            }
+
+            foreach (var refModel in model.ReferencedModels)
+            {
+                foreach (var element in refModel.SchemaElements.Where(el =>
+                    !ODataConstants.StandardNamespaces.Any(std => el.Namespace.StartsWith(std))))
+                {
+                    yield return element;
+                }
+            }
+        }
+
     }
 }

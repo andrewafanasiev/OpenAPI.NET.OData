@@ -1,13 +1,15 @@
-﻿// ------------------------------------------------------------
+// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Edm;
 using Microsoft.OpenApi.OData.Tests;
 using Xunit;
@@ -16,21 +18,79 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 {
     public class EdmFunctionOperationHandlerTests
     {
-        private EdmFunctionOperationHandler _operationHandler = new EdmFunctionOperationHandler();
+        private EdmFunctionOperationHandler _operationHandler = new();
+        #region OperationHandlerTests
+        [Fact]
+        public void SetsDeprecationInformation()
+        {
+          // Arrange
+          IEdmModel model = EdmModelHelper.TripServiceModel;
+          ODataContext context = new(model);
+          IEdmEntitySet people = model.EntityContainer.FindEntitySet("People");
+          Assert.NotNull(people);
+
+          IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>().First(f => f.Name == "GetFriendsTrips");
+          Assert.NotNull(function);
+
+          ODataPath path = new(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType), new ODataOperationSegment(function));
+
+          // Act
+          var operation = _operationHandler.CreateOperation(context, path);
+
+          // Assert
+          Assert.NotNull(operation);
+          Assert.True(operation.Deprecated);
+          Assert.NotEmpty(operation.Extensions);
+          var extension = operation.Extensions["x-ms-deprecation"];
+          Assert.NotNull(extension);
+        }
 
         [Fact]
-        public void CreateOperationForEdmFunctionReturnsCorrectOperation()
+        public void DoesntSetDeprecationInformation()
+        {
+          // Arrange
+          IEdmModel model = EdmModelHelper.TripServiceModel;
+          ODataContext context = new(model);
+          IEdmEntitySet people = model.EntityContainer.FindEntitySet("People");
+          Assert.NotNull(people);
+
+          IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>().First(f => f.Name == "GetFavoriteAirline");
+          Assert.NotNull(function);
+
+          ODataPath path = new(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType), new ODataOperationSegment(function));
+
+          // Act
+          var operation = _operationHandler.CreateOperation(context, path);
+
+          // Assert
+          Assert.NotNull(operation);
+          Assert.True(operation.Deprecated);
+          Assert.NotEmpty(operation.Extensions);
+          var extension = operation.Extensions["x-ms-deprecation"];
+          Assert.NotNull(extension);
+        }
+
+        #endregion
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CreateOperationForEdmFunctionReturnsCorrectOperation(bool useHTTPStatusCodeClass2XX)
         {
             // Arrange
             IEdmModel model = EdmModelHelper.TripServiceModel;
-            ODataContext context = new ODataContext(model);
+            var settings = new OpenApiConvertSettings
+            {
+                UseSuccessStatusCodeRange = useHTTPStatusCodeClass2XX
+            };
+            ODataContext context = new ODataContext(model, settings);
             IEdmEntitySet people = model.EntityContainer.FindEntitySet("People");
             Assert.NotNull(people);
 
             IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>().First(f => f.Name == "GetFavoriteAirline");
             Assert.NotNull(function);
 
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType()), new ODataOperationSegment(function));
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType), new ODataOperationSegment(function));
 
             // Act
             var operation = _operationHandler.CreateOperation(context, path);
@@ -40,20 +100,21 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             Assert.Equal("Invoke function GetFavoriteAirline", operation.Summary);
             Assert.NotNull(operation.Tags);
             var tag = Assert.Single(operation.Tags);
-            Assert.Equal("People.Functions", tag.Name);
+            Assert.Equal("People.Person", tag.Name);
 
             Assert.NotNull(operation.Parameters);
-            Assert.Equal(1, operation.Parameters.Count);
+            Assert.Single(operation.Parameters);
             Assert.Equal(new string[] { "UserName" }, operation.Parameters.Select(p => p.Name));
 
             Assert.Null(operation.RequestBody);
 
             Assert.Equal(2, operation.Responses.Count);
-            Assert.Equal(new string[] { "200", "default" }, operation.Responses.Select(e => e.Key));
+            var statusCode = useHTTPStatusCodeClass2XX ? "2XX" : "200";
+            Assert.Equal(new string[] { statusCode, "default" }, operation.Responses.Select(e => e.Key));
         }
 
         [Fact]
-        public void CreateOperationForEdmFunctionReturnsCorrectOperationHierarhicalClass()
+        public void CreateOperationForEdmFunctionReturnsCorrectOperationHierarchicalClass()
         {
             // Arrange
             IEdmModel model = EdmModelHelper.ContractServiceModel;
@@ -66,7 +127,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>().First(f => f.Name == functionName);
             Assert.NotNull(function);
 
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType()), new ODataOperationSegment(function));
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType), new ODataOperationSegment(function));
 
             // Act
             var operation = _operationHandler.CreateOperation(context, path);
@@ -74,13 +135,14 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             // Assert
             Assert.NotNull(operation);
             Assert.Equal($"Invoke function {functionName}", operation.Summary);
+            Assert.Equal("Collection of contract attachments.", operation.Description);
             Assert.NotNull(operation.Tags);
             var tag = Assert.Single(operation.Tags);
-            Assert.Equal($"{entitySetName}.Functions", tag.Name);
+            Assert.Equal($"{entitySetName}.AccountApiModel", tag.Name);
 
             Assert.NotNull(operation.Parameters);
-            Assert.Equal(1, operation.Parameters.Count);
-            Assert.Equal(new string[] { "id" }, operation.Parameters.Select(p => p.Name));
+            Assert.Equal(6, operation.Parameters.Count); // id, top, skip, count, search, filter
+            Assert.Contains("id", operation.Parameters.Select(x => x.Name).FirstOrDefault());
 
             Assert.Null(operation.RequestBody);
 
@@ -116,19 +178,25 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
                 new ODataKeySegment(customer),
                 new ODataOperationSegment(function));
 
+            ODataPath path2 = new ODataPath(new ODataNavigationSourceSegment(customers),
+                new ODataOperationSegment(function));
+
             // Act
             var operation = _operationHandler.CreateOperation(context, path);
+            var operation2 = _operationHandler.CreateOperation(context, path2);
 
             // Assert
             Assert.NotNull(operation);
 
             if (enableOperationId)
             {
-                Assert.Equal("Customers.MyFunction", operation.OperationId);
+                Assert.Equal("Customers.Customer.MyFunction", operation.OperationId);
+                Assert.Equal("Customers.MyFunction", operation2.OperationId);
             }
             else
             {
                 Assert.Null(operation.OperationId);
+                Assert.Null(operation2.OperationId);
             }
         }
 
@@ -160,9 +228,9 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             ODataPath path = new ODataPath(new ODataNavigationSourceSegment(customers),
                 new ODataKeySegment(customer),
-                new ODataTypeCastSegment(vipCustomer),
+                new ODataTypeCastSegment(vipCustomer, model),
                 new ODataOperationSegment(function));
-
+          
             // Act
             var operation = _operationHandler.CreateOperation(context, path);
 
@@ -171,7 +239,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             if (enableOperationId)
             {
-                Assert.Equal("Customers.NS.VipCustomer.MyFunction", operation.OperationId);
+                Assert.Equal("Customers.Customer.NS.VipCustomer.MyFunction", operation.OperationId);
             }
             else
             {
@@ -206,7 +274,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
-                EnableOperationId = enableOperationId
+                EnableOperationId = enableOperationId,
+                AddSingleQuotesForStringParameters = true,
             };
             ODataContext context = new ODataContext(model, settings);
 
@@ -222,7 +291,66 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             if (enableOperationId)
             {
-                Assert.Equal("Customers.MyFunction-28ae", operation.OperationId);
+                Assert.Equal("Customers.Customer.MyFunction-df74", operation.OperationId);
+            }
+            else
+            {
+                Assert.Null(operation.OperationId);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CreateOperationForComposableOverloadEdmFunctionReturnsCorrectOperationId(bool enableOperationId)
+        {
+            // Arrange
+            EdmModel model = new();
+            EdmEntityType customer = new("NS", "Customer");
+            customer.AddKeys(customer.AddStructuralProperty("ID", EdmPrimitiveTypeKind.Int32));
+            model.AddElement(customer);
+
+            EdmFunction function = new("NS", "MyFunction", EdmCoreModel.Instance.GetString(false), true, null, false);
+            function.AddParameter("entity", new EdmEntityTypeReference(customer, false));
+            function.AddParameter("param", EdmCoreModel.Instance.GetString(false));
+            model.AddElement(function);
+
+            function = new EdmFunction("NS", "MyFunction", EdmCoreModel.Instance.GetString(false), true, null, false);
+            function.AddParameter("entity", new EdmEntityTypeReference(customer, false));
+            function.AddParameter("param", EdmCoreModel.Instance.GetString(false));
+            function.AddParameter("param2", EdmCoreModel.Instance.GetString(false));
+            model.AddElement(function);
+
+            EdmFunction function2 = new("NS", "MyFunction2", EdmCoreModel.Instance.GetString(false), true, null, false);
+            function2.AddParameter("entity2", new EdmEntityTypeReference(customer, false));
+            function2.AddParameter("param3", EdmCoreModel.Instance.GetString(false));
+            model.AddElement(function2);
+
+            EdmEntityContainer container = new("NS", "Default");
+            EdmEntitySet customers = new(container, "Customers", customer);
+            model.AddElement(container);
+
+            OpenApiConvertSettings settings = new OpenApiConvertSettings
+            {
+                EnableOperationId = enableOperationId,
+                AddSingleQuotesForStringParameters = true,
+            };
+            ODataContext context = new(model, settings);
+
+            ODataPath path = new(new ODataNavigationSourceSegment(customers),
+                new ODataKeySegment(customer),
+                new ODataOperationSegment(function),
+                new ODataOperationSegment(function2));
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            Assert.NotNull(operation);
+
+            if (enableOperationId)
+            {
+                Assert.Equal("Customers.Customer.MyFunction.MyFunction2-df74", operation.OperationId);
             }
             else
             {
@@ -340,6 +468,108 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             {
                 Assert.Empty(operation.Security);
             }
+        }
+
+        [Theory]
+        [InlineData("getUserArchivedPrintJobs", true)] // returns collection
+        [InlineData("getUserArchivedPrintJobs", false)] // returns collection
+        [InlineData("managedDeviceEnrollmentAbandonmentSummary", true)] // does not return collection
+        public void CreateOperationForEdmFunctionWithCollectionReturnTypeContainsXMsPageableExtension(string functionName, bool enablePagination)
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.GraphBetaModel;
+            OpenApiConvertSettings settings = new()
+            {
+                EnableOperationId = true,
+                EnablePagination = enablePagination
+            };
+            ODataContext context = new(model, settings);
+            IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>()
+                .First(x => x.Name == functionName &&
+                    x.FindParameter("bindingParameter").Type.Definition.ToString() == "microsoft.graph.reportRoot");
+            IEdmEntityContainer container = model.SchemaElements.OfType<IEdmEntityContainer>().First();
+            IEdmSingleton reports = container.FindSingleton("reports");
+
+            ODataPath path = new(new ODataNavigationSourceSegment(reports),
+                new ODataOperationSegment(function));
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            if (enablePagination && function.ReturnType.IsCollection())
+            {
+                Assert.True(operation.Extensions.ContainsKey(Common.Constants.xMsPageable));
+            }
+            else
+            {
+                Assert.False(operation.Extensions.ContainsKey(Common.Constants.xMsPageable));
+            }
+        }
+
+        [Fact]
+        public void CreateOperationForFunctionWithDateTimeParametersReturnsCorrectPathItemName()
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.GraphBetaModel;
+            OpenApiConvertSettings settings = new()
+            {
+                AddSingleQuotesForStringParameters = true,
+            };
+            ODataContext context = new(model, settings);
+
+            IEdmFunction function = model.SchemaElements.OfType<IEdmFunction>()
+                .FirstOrDefault(x => x.Name == "getPrinterUsageSummary");
+            Assert.NotNull(function); // guard
+
+            IEdmEntityContainer container = model.SchemaElements.OfType<IEdmEntityContainer>().First();
+            IEdmSingleton reports = container.FindSingleton("reports");
+
+            ODataPath path = new(new ODataNavigationSourceSegment(reports),
+                new ODataOperationSegment(function));
+
+            // Act
+            OpenApiOperation operation = _operationHandler.CreateOperation(context, path);
+            string pathItemName = path.GetPathItemName();
+            
+            // Assert
+            Assert.NotNull(operation);
+            Assert.Equal("/reports/microsoft.graph.getPrinterUsageSummary(printerId={printerId},periodStart={periodStart},periodEnd={periodEnd})", pathItemName);
+            Assert.Equal("Usage: periodStart={periodStart}", operation.Parameters.First(x => x.Name == "periodStart").Description);
+            Assert.Equal("Usage: periodEnd={periodEnd}", operation.Parameters.First(x => x.Name == "periodEnd").Description);
+
+        }
+
+        [Fact]
+        public void CreateFunctionOperationWithAlternateKeyReturnsCorrectOperationId()
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.GraphBetaModel;
+            ODataContext context = new(model, new OpenApiConvertSettings()
+            {
+                EnableOperationId = true
+            });
+
+            IEdmSingleton singleton = model.EntityContainer.FindSingleton("communications");
+            IEdmEntityType entityType = model.SchemaElements.OfType<IEdmEntityType>().First(c => c.Name == "cloudCommunications");
+            IEdmNavigationProperty navProp = entityType.DeclaredNavigationProperties().First(c => c.Name == "onlineMeetings");
+            IEdmOperation action = model.SchemaElements.OfType<IEdmOperation>().First(f => f.Name == "sendVirtualAppointmentReminderSms");
+            IDictionary<string, string> keyMappings = new Dictionary<string, string> { { "joinWebUrl", "joinWebUrl" } };
+
+            ODataPath path = new(new ODataNavigationSourceSegment(singleton),
+                new ODataNavigationPropertySegment(navProp),
+                new ODataKeySegment(entityType, keyMappings)
+                {
+                    IsAlternateKey = true
+                },
+                new ODataOperationSegment(action));
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            Assert.NotNull(operation);
+            Assert.Equal("communications.onlineMeetings.joinWebUrl.sendVirtualAppointmentReminderSms", operation.OperationId);
         }
     }
 }

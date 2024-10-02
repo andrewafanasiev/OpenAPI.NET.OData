@@ -55,6 +55,11 @@ namespace Microsoft.OpenApi.OData.PathItem
         /// <inheritdoc/>
         protected override void SetExtensions(OpenApiPathItem item)
         {
+            if (!Context.Settings.ShowMsDosGroupPath)
+            {
+                return;
+            }
+
             ODataNavigationSourceSegment navigationSourceSegment = Path.FirstSegment as ODataNavigationSourceSegment;
             IEdmNavigationSource currentNavSource = navigationSourceSegment.NavigationSource;
 
@@ -88,6 +93,16 @@ namespace Microsoft.OpenApi.OData.PathItem
 
                 item.Extensions.Add(Constants.xMsDosGroupPath, array);
             }
+
+            base.SetExtensions(item);
+            item.Extensions.AddCustomAttributesToExtensions(Context, EdmOperation);            
+        }
+
+        /// <inheritdoc/>
+        protected override void SetBasicInfo(OpenApiPathItem pathItem)
+        {
+            base.SetBasicInfo(pathItem);
+            pathItem.Description = $"Provides operations to call the {EdmOperation.Name} method.";
         }
     }
 }

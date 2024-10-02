@@ -5,12 +5,14 @@
 //---------------------------------------------------------------------
 
 using System;
+using System.Reflection;
+using Microsoft.OpenApi.OData;
 
 namespace OoasUtil
 {
     class Program
     {
-        static int Main(string[] args)
+        static async System.Threading.Tasks.Task<int> Main(string[] args)
         {
             // args = new[] { "--json", "--input", @"E:\work\OneApiDesign\test\TripService.OData.xml", "-o", @"E:\work\OneApiDesign\test1\Trip.json" };
             // args = new[] { "--yaml", "-i", @"E:\work\OneApiDesign\test\TripService.OData.xml", "-o", @"E:\work\OneApiDesign\test1\Trip.yaml" };
@@ -29,16 +31,29 @@ namespace OoasUtil
             }
 
             OpenApiGenerator generator;
+
+            OpenApiConvertSettings settings = new OpenApiConvertSettings
+            {
+                EnableKeyAsSegment = processer.KeyAsSegment,
+                EnableDerivedTypesReferencesForResponses = processer.DerivedTypesReferencesForResponses.Value,
+                EnableDerivedTypesReferencesForRequestBody = processer.DerivedTypesReferencesForRequestBody.Value,
+                RequireDerivedTypesConstraintForBoundOperations = processer.RequireDerivedTypesConstraint.Value,
+                EnablePagination = processer.EnablePagination.Value,
+                EnableUnqualifiedCall = processer.EnableUnqualifiedCall.Value,
+                ShowSchemaExamples = !processer.DisableSchemaExamples.Value,
+                OpenApiSpecVersion = processer.Version.Value,
+            };
+
             if (processer.IsLocalFile)
             {
-                generator = new FileOpenApiGenerator(processer.Input, processer.Output, processer.Format.Value, processer.Version.Value);
+                generator = new FileOpenApiGenerator(processer.Input, processer.Output, processer.Format.Value, settings);
             }
             else
             {
-                generator = new UrlOpenApiGenerator(new Uri(processer.Input), processer.Output, processer.Format.Value, processer.Version.Value);
+                generator = new UrlOpenApiGenerator(new Uri(processer.Input), processer.Output, processer.Format.Value, settings);
             }
 
-            if (generator.Generate())
+            if (await generator.GenerateAsync())
             {
                 Console.WriteLine("Succeeded!");
                 return 1;

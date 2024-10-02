@@ -18,12 +18,18 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
     {
         private EdmFunctionImportOperationHandler _operationHandler = new EdmFunctionImportOperationHandler();
 
-        [Fact]
-        public void CreateOperationForEdmFunctionImportReturnsCorrectOperation()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CreateOperationForEdmFunctionImportReturnsCorrectOperation(bool useHTTPStatusCodeClass2XX)
         {
             // Arrange
             IEdmModel model = EdmModelHelper.TripServiceModel;
-            ODataContext context = new ODataContext(model);
+            var settings = new OpenApiConvertSettings
+            {
+                UseSuccessStatusCodeRange = useHTTPStatusCodeClass2XX
+            };
+            ODataContext context = new ODataContext(model, settings);
             var functionImport = model.EntityContainer.FindOperationImports("GetPersonWithMostFriends").FirstOrDefault();
             Assert.NotNull(functionImport);
             ODataPath path = new ODataPath(new ODataOperationImportSegment(functionImport));
@@ -34,6 +40,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             // Assert
             Assert.NotNull(operation);
             Assert.Equal("Invoke functionImport GetPersonWithMostFriends", operation.Summary);
+            Assert.Equal("The person with most friends.", operation.Description);
             Assert.NotNull(operation.Tags);
             var tag = Assert.Single(operation.Tags);
             Assert.Equal("People", tag.Name);
@@ -44,7 +51,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             Assert.Null(operation.RequestBody);
 
             Assert.Equal(2, operation.Responses.Count);
-            Assert.Equal(new string[] { "200", "default" }, operation.Responses.Select(e => e.Key));
+            var statusCode = useHTTPStatusCodeClass2XX ? "2XX" : "200";
+            Assert.Equal(new string[] { statusCode, "default" }, operation.Responses.Select(e => e.Key));
         }
 
         [Theory]
@@ -119,7 +127,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
-                EnableOperationId = enableOperationId
+                EnableOperationId = enableOperationId,
+                AddSingleQuotesForStringParameters = true,
             };
             ODataContext context = new ODataContext(model, settings);
 
@@ -133,7 +142,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             if (enableOperationId)
             {
-                Assert.Equal("FunctionImport.MyFunction-3e3f", operation.OperationId);
+                Assert.Equal("FunctionImport.MyFunction-cc1c", operation.OperationId);
             }
             else
             {
@@ -173,7 +182,31 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
           <PropertyValue Property=""Name"" String=""myhead1"" />
           <PropertyValue Property=""Required"" Bool=""true"" />
         </Record>
-      </Collection>
+        <Record>
+          <PropertyValue Property=""Name"" String=""myhead2"" />
+          <PropertyValue Property = ""Description"" String = ""This is the description for myhead2."" />
+          <PropertyValue Property = ""Required"" Bool = ""false"" />
+        </Record>
+        <Record>
+          <PropertyValue Property=""Name"" String=""myhead3"" />
+          <PropertyValue Property = ""DocumentationURL"" String = ""https://foo.bar.com/myhead3"" />
+          <PropertyValue Property = ""Required"" Bool = ""false"" />
+        </Record>
+        <Record>
+          <PropertyValue Property=""Name"" String=""myhead4"" />
+          <PropertyValue Property = ""Description"" String = ""This is the description for myhead4."" />
+          <PropertyValue Property = ""DocumentationURL"" String = ""https://foo.bar.com/myhead4"" />
+          <PropertyValue Property = ""Required"" Bool = ""false"" />
+          <PropertyValue Property = ""ExampleValues"" >
+            <Collection>
+              <Record>
+                 <PropertyValue Property = ""Value"" String = ""sample"" />
+                 <PropertyValue Property = ""Description"" String = ""The sample description."" />
+                 </Record>
+            </Collection>
+          </PropertyValue>
+        </Record>
+       </Collection>
     </PropertyValue>
     <PropertyValue Property=""Permissions"">
       <Collection>
@@ -262,6 +295,49 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
       }
     }
 ".ChangeLineBreaks(), json);
+
+                // Assert with no DocumentationURL value
+                Assert.Contains(@"
+    {
+      ""name"": ""myhead2"",
+      ""in"": ""header"",
+      ""description"": ""This is the description for myhead2."",
+      ""schema"": {
+        ""type"": ""string""
+      }
+    }
+".ChangeLineBreaks(), json);
+
+                // Assert with no Description value
+                Assert.Contains(@"
+    {
+      ""name"": ""myhead3"",
+      ""in"": ""header"",
+      ""description"": ""Documentation URL: https://foo.bar.com/myhead3"",
+      ""schema"": {
+        ""type"": ""string""
+      }
+    }
+".ChangeLineBreaks(), json);
+
+                // Assert with both DocumentationURL and Description values
+                Assert.Contains(@"
+    {
+      ""name"": ""myhead4"",
+      ""in"": ""header"",
+      ""description"": ""This is the description for myhead4. Documentation URL: https://foo.bar.com/myhead4"",
+      ""schema"": {
+        ""type"": ""string""
+      },
+      ""examples"": {
+        ""example-1"": {
+          ""description"": ""The sample description."",
+          ""value"": ""sample""
+        }
+      }
+    }
+".ChangeLineBreaks(), json);
+
             }
             else
             {

@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Csdl;
 using Xunit;
 
 namespace Microsoft.OpenApi.OData.Edm.Tests
@@ -31,14 +32,14 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Fact]
-        public void GetEntityTypeThrowsNotImplementedException()
+        public void GetEntityTypeReturnsNull()
         {
             // Arrange & Act
             IEdmOperation operation = new EdmAction("NS", "MyAction", null);
             var segment = new ODataOperationSegment(operation);
 
             // Assert
-            Assert.Throws<NotImplementedException>(() => segment.EntityType);
+            Assert.Null(segment.EntityType);
         }
 
         [Fact]
@@ -74,17 +75,18 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Theory]
-        [InlineData(true, true, "MyFunction(param={param})")]
-        [InlineData(true, false, "MyFunction(entity=@entity,param={param})")]
-        [InlineData(false, true, "NS.MyFunction(param={param})")]
-        [InlineData(false, false, "NS.MyFunction(entity=@entity,param={param})")]
+        [InlineData(true, true, "MyFunction(param={param},param2=@param2)")]
+        [InlineData(true, false, "MyFunction(entity={entity},param={param},param2=@param2)")]
+        [InlineData(false, true, "NS.MyFunction(param={param},param2=@param2)")]
+        [InlineData(false, false, "NS.MyFunction(entity={entity},param={param},param2=@param2)")]
         public void GetPathItemNameReturnsCorrectFunctionLiteral(bool unqualifiedCall, bool isBound, string expected)
         {
             // Arrange & Act
             IEdmEntityTypeReference entityTypeReference = new EdmEntityTypeReference(new EdmEntityType("NS", "Entity"), false);
             IEdmTypeReference parameterType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.Boolean, isNullable: false);
-            EdmFunction boundFunction = BoundFunction("MyFunction", isBound, entityTypeReference);
+            EdmFunction boundFunction = BoundFunction("MyFunction", isBound, entityTypeReference, namespaceIdentifier: "NS");
             boundFunction.AddParameter("param", parameterType);
+            boundFunction.AddOptionalParameter("param2", parameterType);
 
             var segment = new ODataOperationSegment(boundFunction);
             OpenApiConvertSettings settings = new OpenApiConvertSettings
@@ -97,22 +99,28 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Theory]
-        [InlineData(true, true, "{param}")]
-        [InlineData(true, false, "NS.MyFunction(param={param})")]
-        [InlineData(false, true, "NS.MyFunction(param={param})")]
-        [InlineData(false, false, "NS.MyFunction(param={param})")]
-        public void GetPathItemNameReturnsCorrectFunctionLiteralForEscapedFunction(bool isEscapedFunction, bool enableEscapeFunctionCall, string expected)
+        [InlineData("NS.XY.MyFunction(param={param},param2=@param2)", "NS", "NS.XY", false)]
+        [InlineData("MyFunction(param={param},param2=@param2)", "NS.XY", "NS.XY", false)]
+        [InlineData("N.MyFunction(param={param},param2=@param2)", "NS", "NS.XY", true)]                
+        [InlineData("MyFunction(param={param},param2=@param2)", "NS.XY", "NS.XY", true)]
+        public void GetPathItemNameReturnsCorrectFunctionLiteralWhenSegmentAliasedOrNamespacePrefixStripped(
+            string expected, string namespacePrefixToStrip, string namespaceName, bool enableAlias)
         {
             // Arrange & Act
-            IEdmEntityTypeReference entityTypeReference = new EdmEntityTypeReference(new EdmEntityType("NS", "Entity"), false);
-            IEdmTypeReference parameterType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.String, isNullable: false);
-            EdmFunction boundFunction = BoundFunction("MyFunction", true, entityTypeReference);
+            IEdmEntityTypeReference entityTypeReference = new EdmEntityTypeReference(new EdmEntityType(namespaceName, "Entity"), false);
+            IEdmTypeReference parameterType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.Boolean, isNullable: false);
+            EdmFunction boundFunction = BoundFunction("MyFunction", true, entityTypeReference, namespaceIdentifier: namespaceName);
             boundFunction.AddParameter("param", parameterType);
+            boundFunction.AddOptionalParameter("param2", parameterType);
+            EdmModel model = new();
+            model.AddElement(boundFunction);
+            model.SetNamespaceAlias(namespaceName, "N");
 
-            var segment = new ODataOperationSegment(boundFunction, isEscapedFunction);
-            OpenApiConvertSettings settings = new OpenApiConvertSettings
+            var segment = new ODataOperationSegment(boundFunction, model);
+            OpenApiConvertSettings settings = new()
             {
-                EnableUriEscapeFunctionCall = enableEscapeFunctionCall
+                NamespacePrefixToStripForInMethodPaths = namespacePrefixToStrip,
+                EnableAliasForOperationSegments = enableAlias
             };
 
             // Assert
@@ -120,10 +128,35 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Theory]
-        [InlineData(true, true, "{param}:")]
-        [InlineData(true, false, "NS.MyFunction(param={param})")]
-        [InlineData(false, true, "NS.MyFunction(param={param})")]
-        [InlineData(false, false, "NS.MyFunction(param={param})")]
+        [InlineData(true, true, "{param2}")]
+        [InlineData(true, false, "NS.MyFunction(param='{param}',param2='@param2')")]
+        [InlineData(false, true, "NS.MyFunction(param='{param}',param2='@param2')")]
+        [InlineData(false, false, "NS.MyFunction(param='{param}',param2='@param2')")]
+        public void GetPathItemNameReturnsCorrectFunctionLiteralForEscapedFunction(bool isEscapedFunction, bool enableEscapeFunctionCall, string expected)
+        {
+            // Arrange & Act
+            IEdmEntityTypeReference entityTypeReference = new EdmEntityTypeReference(new EdmEntityType("NS", "Entity"), false);
+            IEdmTypeReference parameterType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.String, isNullable: false);
+            EdmFunction boundFunction = BoundFunction("MyFunction", true, entityTypeReference);
+            boundFunction.AddParameter("param", parameterType);
+            boundFunction.AddOptionalParameter("param2", parameterType);
+
+            var segment = new ODataOperationSegment(boundFunction, isEscapedFunction, EdmCoreModel.Instance);
+            OpenApiConvertSettings settings = new OpenApiConvertSettings
+            {
+                EnableUriEscapeFunctionCall = enableEscapeFunctionCall,
+                AddSingleQuotesForStringParameters = true,
+            };
+
+            // Assert
+            Assert.Equal(expected, segment.GetPathItemName(settings));
+        }
+
+        [Theory]
+        [InlineData(true, true, "{param2}:")]
+        [InlineData(true, false, "NS.MyFunction(param='{param}',param2='@param2')")]
+        [InlineData(false, true, "NS.MyFunction(param='{param}',param2='@param2')")]
+        [InlineData(false, false, "NS.MyFunction(param='{param}',param2='@param2')")]
         public void GetPathItemNameReturnsCorrectFunctionLiteralForEscapedComposableFunction(bool isEscapedFunction, bool enableEscapeFunctionCall, string expected)
         {
             // Arrange & Act
@@ -131,21 +164,28 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
             IEdmTypeReference parameterType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.String, isNullable: false);
             EdmFunction boundFunction = BoundFunction("MyFunction", true, entityTypeReference, true);
             boundFunction.AddParameter("param", parameterType);
+            boundFunction.AddOptionalParameter("param2", parameterType);
 
-            var segment = new ODataOperationSegment(boundFunction, isEscapedFunction);
+            var segment = new ODataOperationSegment(boundFunction, isEscapedFunction, EdmCoreModel.Instance);
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
-                EnableUriEscapeFunctionCall = enableEscapeFunctionCall
+                EnableUriEscapeFunctionCall = enableEscapeFunctionCall,
+                AddSingleQuotesForStringParameters = true
             };
 
             // Assert
             Assert.Equal(expected, segment.GetPathItemName(settings));
         }
 
-        private EdmFunction BoundFunction(string funcName,  bool isBound, IEdmTypeReference firstParameterType, bool isComposable = false)
+        private EdmFunction BoundFunction(
+            string funcName,
+            bool isBound,
+            IEdmTypeReference firstParameterType,
+            bool isComposable = false,
+            string namespaceIdentifier = "NS")
         {
             IEdmTypeReference returnType = EdmCoreModel.Instance.GetPrimitive(EdmPrimitiveTypeKind.Boolean, isNullable: false);
-            EdmFunction boundFunction = new EdmFunction("NS", funcName, returnType,
+            EdmFunction boundFunction = new EdmFunction(namespaceIdentifier, funcName, returnType,
                 isBound: isBound, entitySetPathExpression: null, isComposable: isComposable);
             boundFunction.AddParameter("entity", firstParameterType);
             return boundFunction;

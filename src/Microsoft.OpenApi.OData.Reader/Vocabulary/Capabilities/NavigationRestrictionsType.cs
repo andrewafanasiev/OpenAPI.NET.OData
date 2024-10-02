@@ -3,11 +3,11 @@
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.OData.Edm.Vocabularies;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Edm;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.OpenApi.OData.Vocabulary.Capabilities
 {
@@ -121,7 +121,7 @@ namespace Microsoft.OpenApi.OData.Vocabulary.Capabilities
         /// Restrictions for retrieving entities.
         /// </summary>
         public ReadRestrictionsType ReadRestrictions { get; set; }
-
+        
         /// <summary>
         /// Init the <see cref="NavigationPropertyRestriction"/>.
         /// </summary>
@@ -175,7 +175,7 @@ namespace Microsoft.OpenApi.OData.Vocabulary.Capabilities
             // DeleteRestrictions
             DeleteRestrictions = record.GetRecord<DeleteRestrictionsType>("DeleteRestrictions");
 
-            // IndexableByKey
+            // OptimisticConcurrencyControl
             OptimisticConcurrencyControl = record.GetBoolean("OptimisticConcurrencyControl");
 
             // ReadRestrictions
@@ -198,6 +198,11 @@ namespace Microsoft.OpenApi.OData.Vocabulary.Capabilities
         /// Gets the navigation properties which has navigation restrictions.
         /// </summary>
         public IList<NavigationPropertyRestriction> RestrictedProperties { get; private set; }
+
+        /// <summary>
+        /// Gets the navigation property referenceable value.
+        /// </summary>
+        public bool? Referenceable { get; set; }
 
         /// <summary>
         /// Gets a value indicating the target is navigable or not.
@@ -230,6 +235,25 @@ namespace Microsoft.OpenApi.OData.Vocabulary.Capabilities
 
             // RestrictedProperties
             RestrictedProperties = record.GetCollection<NavigationPropertyRestriction>("RestrictedProperties");
+
+            // Referenceable
+            Referenceable = record.GetBoolean("Referenceable");
+        }
+
+        /// <summary>
+        /// Merges properties of the specified <see cref="NavigationRestrictionsType"/> object into this instance if they are null.
+        /// </summary>
+        /// <param name="source">The <see cref="NavigationRestrictionsType"/> object containing properties to merge.</param>
+        public void MergePropertiesIfNull(NavigationRestrictionsType source)
+        {
+            if (source == null)
+                return;
+
+            Navigability ??= source.Navigability;
+
+            RestrictedProperties ??= source.RestrictedProperties;
+
+            Referenceable ??= source.Referenceable;
         }
     }
 }

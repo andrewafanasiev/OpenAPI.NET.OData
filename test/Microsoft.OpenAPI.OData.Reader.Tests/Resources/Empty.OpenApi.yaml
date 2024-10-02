@@ -1,21 +1,21 @@
-﻿openapi: 3.0.1
+openapi: 3.0.1
 info:
   title: 'OData Service for namespace '
   description: This OData service is located at http://localhost
-  version: 1.0.1
+  version: 1.0.0
 servers:
   - url: http://localhost
 paths: { }
 components:
   schemas:
-    odata.error:
+    ODataErrors.ODataError:
       required:
         - error
       type: object
       properties:
         error:
-          $ref: '#/components/schemas/odata.error.main'
-    odata.error.main:
+          $ref: '#/components/schemas/ODataErrors.MainError'
+    ODataErrors.MainError:
       required:
         - code
         - message
@@ -25,16 +25,17 @@ components:
           type: string
         message:
           type: string
+          x-ms-primary-error-message: true
         target:
           type: string
+          nullable: true
         details:
           type: array
           items:
-            $ref: '#/components/schemas/odata.error.detail'
-        innererror:
-          type: object
-          description: The structure of this object is service-specific
-    odata.error.detail:
+            $ref: '#/components/schemas/ODataErrors.ErrorDetails'
+        innerError:
+          $ref: '#/components/schemas/ODataErrors.InnerError'
+    ODataErrors.ErrorDetails:
       required:
         - code
         - message
@@ -46,18 +47,55 @@ components:
           type: string
         target:
           type: string
+          nullable: true
+    ODataErrors.InnerError:
+      type: object
+      description: The structure of this object is service-specific
+    ODataCountResponse:
+      type: integer
+      format: int32
+    ReferenceUpdate:
+      type: object
+      properties:
+        '@odata.id':
+          type: string
+        '@odata.type':
+          type: string
+          nullable: true
+    ReferenceCreate:
+      type: object
+      properties:
+        '@odata.id':
+          type: string
+      additionalProperties:
+        type: object
+    ReferenceNumeric:
+      enum:
+        - '-INF'
+        - INF
+        - NaN
+      type: string
+      nullable: true
   responses:
     error:
       description: error
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/odata.error'
+            $ref: '#/components/schemas/ODataErrors.ODataError'
+    ODataCountResponse:
+      description: The count of the resource
+      content:
+        text/plain:
+          schema:
+            $ref: '#/components/schemas/ODataCountResponse'
   parameters:
     top:
       name: $top
       in: query
       description: Show only the first n items
+      style: form
+      explode: false
       schema:
         minimum: 0
         type: integer
@@ -66,6 +104,8 @@ components:
       name: $skip
       in: query
       description: Skip the first n items
+      style: form
+      explode: false
       schema:
         minimum: 0
         type: integer
@@ -73,17 +113,38 @@ components:
       name: $count
       in: query
       description: Include count of items
+      style: form
+      explode: false
       schema:
         type: boolean
     filter:
       name: $filter
       in: query
       description: Filter items by property values
+      style: form
+      explode: false
       schema:
         type: string
     search:
       name: $search
       in: query
       description: Search items by search phrases
+      style: form
+      explode: false
       schema:
         type: string
+  requestBodies:
+    refPostBody:
+      description: New navigation property ref value
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReferenceCreate'
+      required: true
+    refPutBody:
+      description: New navigation property ref values
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReferenceUpdate'
+      required: true

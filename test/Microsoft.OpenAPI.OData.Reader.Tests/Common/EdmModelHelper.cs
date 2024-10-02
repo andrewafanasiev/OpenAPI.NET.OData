@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
+using System;
 using System.Xml.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
@@ -12,6 +13,8 @@ using Xunit;
 using System.IO;
 using System.Xml;
 using System.Collections.Generic;
+using System.Net;
+using System.Text;
 using Microsoft.OData.Edm.Validation;
 using Xunit.Abstractions;
 
@@ -26,6 +29,8 @@ namespace Microsoft.OpenApi.OData.Tests
 
         public static IEdmModel MultipleInheritanceEdmModel { get; }
 
+        public static IEdmModel InheritanceEdmModelAcrossReferences { get; }
+
         public static IEdmModel BasicEdmModel { get; }
 
         public static IEdmModel MultipleSchemasEdmModel { get; }
@@ -33,9 +38,12 @@ namespace Microsoft.OpenApi.OData.Tests
         public static IEdmModel CompositeKeyModel { get; }
 
         public static IEdmModel TripServiceModel { get; }
+
         public static IEdmModel ContractServiceModel { get; }
 
         public static IEdmModel GraphBetaModel { get; }
+
+        public static IEdmModel ComposableFunctionsModel { get; }
 
         static EdmModelHelper()
         {
@@ -46,6 +54,8 @@ namespace Microsoft.OpenApi.OData.Tests
             ContractServiceModel = LoadEdmModel("Contract.OData.xml");
             GraphBetaModel = LoadEdmModel("Graph.Beta.OData.xml");
             MultipleSchemasEdmModel = LoadEdmModel("Multiple.Schema.OData.xml");
+            InheritanceEdmModelAcrossReferences = CreateInheritanceEdmModelAcrossReferences();
+            ComposableFunctionsModel = LoadEdmModel("ComposableFunctions.OData.xml");
         }
 
         private static IEdmModel LoadEdmModel(string source)
@@ -160,6 +170,50 @@ namespace Microsoft.OpenApi.OData.Tests
             return model;
         }
 
+        public static IEdmModel CreateInheritanceEdmModelAcrossReferences()
+        {
+            const string modelText =
+                @"<edmx:Edmx Version=""4.0"" xmlns:edmx=""http://docs.oasis-open.org/odata/ns/edmx"">
+  <edmx:Reference Uri=""subModel.csdl"">
+    <edmx:Include Alias=""subModel"" Namespace=""SubNS"" />
+  </edmx:Reference>
+  <edmx:DataServices>
+    <Schema Namespace=""NS"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
+      <EntityType Name=""Customer"" BaseType=""SubNS.CustomerBase"">
+        <Property Name=""Extra"" Type=""Edm.Int32"" Nullable=""false"" />
+      </EntityType>
+      <EntityContainer Name =""Default"">
+         <EntitySet Name=""Customers"" EntityType=""NS.Customer"" />
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>";
+            const string subModelText =
+                @"<edmx:Edmx Version=""4.0"" xmlns:edmx=""http://docs.oasis-open.org/odata/ns/edmx"">
+  <edmx:DataServices>
+    <Schema Namespace=""SubNS"" xmlns=""http://docs.oasis-open.org/odata/ns/edm"">
+      <EntityType Name=""CustomerBase"">
+        <Key>
+          <PropertyRef Name=""ID"" />
+        </Key>
+        <Property Name=""ID"" Type=""Edm.Int32"" Nullable=""false"" />
+      </EntityType>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>";
+
+            IEdmModel model;
+            IEnumerable<EdmError> errors;
+
+            XElement parsed = XElement.Parse(modelText);
+            bool result = CsdlReader.TryParse(parsed.CreateReader(),
+                uri => XElement.Parse(subModelText).CreateReader(),
+                out model,
+                out errors);
+            Assert.True(result);
+            return model;
+        }
+
         private static IEdmModel CreateEdmModel()
         {
             var model = new EdmModel();
@@ -252,7 +306,7 @@ namespace Microsoft.OpenApi.OData.Tests
             model.AddElement(customer);
 
             var container = new EdmEntityContainer("NS", "Container");
-            var customers = container.AddEntitySet("Customers", customer);
+            container.AddEntitySet("Customers", customer);
             model.AddElement(container);
             return model;
         }
@@ -308,7 +362,7 @@ namespace Microsoft.OpenApi.OData.Tests
         <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
       </EntityType>
       <EntityType Name=""Horse"" BaseType=""NS.Animal"" OpenType=""true"">
-        <Property Name=""Height"" Type=""Edm.Decimal"" Nullable=""false"" />
+        <Property Name=""Height"" Type=""Edm.Decimal"" Nullable=""false"" Scale=""variable"" />
       </EntityType>
       <ComplexType Name=""Plant"" Abstract=""true"" OpenType=""true"">
         <Property Name=""Color"" Type=""NS.Color"" Nullable=""false"" />
@@ -324,7 +378,7 @@ namespace Microsoft.OpenApi.OData.Tests
         <Property Name=""Name"" Type=""Edm.String"" Nullable=""false"" />
       </ComplexType>
       <ComplexType Name=""Tree"" BaseType=""NS.LandPlant"" OpenType=""true"">
-        <Property Name=""Price"" Type=""Edm.Decimal"" Nullable=""false"" />
+        <Property Name=""Price"" Type=""Edm.Decimal"" Nullable=""false"" Scale=""variable"" />
       </ComplexType>
       <ComplexType Name=""Flower"" BaseType=""NS.LandPlant"" OpenType=""true"">
         <Property Name=""Height"" Type=""Edm.Double"" Nullable=""false"" />
@@ -359,12 +413,12 @@ namespace Microsoft.OpenApi.OData.Tests
 
         public static string GetCsdl(IEdmModel model)
         {
-            string edmx = string.Empty;
+            string edmx = String.Empty;
 
             using (StringWriter sw = new StringWriter())
             {
                 XmlWriterSettings settings = new XmlWriterSettings();
-                settings.Encoding = System.Text.Encoding.UTF8;
+                settings.Encoding = Encoding.UTF8;
                 settings.Indent = true;
 
                 using (XmlWriter xw = XmlWriter.Create(sw, settings))

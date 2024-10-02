@@ -5,14 +5,14 @@
 //---------------------------------------------------------------------
 
 using System;
-using System.Net;
-using System.IO;
-using System.Text;
 using System.Xml.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OData.Edm.Csdl;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.OData;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace OoasUtil
 {
@@ -31,9 +31,10 @@ namespace OoasUtil
         /// </summary>
         /// <param name="input">The input.</param>
         /// <param name="output">The output.</param>
-        /// <param name="target">The output target.</param>
-        public UrlOpenApiGenerator(Uri input, string output, OpenApiFormat format, OpenApiSpecVersion version)
-            : base(output, format, version)
+        /// <param name="format">The format.</param>
+        /// <param name="settings">Conversion settings.</param>
+        public UrlOpenApiGenerator(Uri input, string output, OpenApiFormat format, OpenApiConvertSettings settings)
+            : base(output, format, settings)
         {
             Input = input;
         }
@@ -41,29 +42,24 @@ namespace OoasUtil
         /// <summary>
         /// Get the Edm model.
         /// </summary>
-        protected override IEdmModel GetEdmModel()
+        protected override async Task<IEdmModel> GetEdmModelAsync(CancellationToken cancellationToken = default)
         {
-            Uri requestUri = new Uri(Input.OriginalString + "/$metadata");
+            Uri requestUri = new (Input.OriginalString + "/$metadata");
 
-            WebRequest request = WebRequest.Create(requestUri);
-
-            WebResponse response = request.GetResponse();
-
-            Stream receivedStream = response.GetResponseStream();
-
-            StreamReader reader = new StreamReader(receivedStream, Encoding.UTF8);
-
-            string csdl = reader.ReadToEnd();
+            string csdl = await GetModelDocumentAsync(requestUri, cancellationToken);
 
             return CsdlReader.Parse(XElement.Parse(csdl).CreateReader());
         }
+        private async Task<string> GetModelDocumentAsync(Uri requestUri, CancellationToken cancellationToken) {
+            using HttpResponseMessage response = await client.GetAsync(requestUri, cancellationToken);
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+        private static readonly HttpClient client = new ();
 
-        protected override OpenApiConvertSettings GetSettings()
+        protected override void ModifySettings()
         {
-            return new OpenApiConvertSettings
-            {
-                ServiceRoot = Input
-            };
+            base.ModifySettings();
+            Settings.ServiceRoot = Input;
         }
     }
 }

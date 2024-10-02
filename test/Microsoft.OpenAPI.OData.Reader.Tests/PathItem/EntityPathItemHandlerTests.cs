@@ -6,9 +6,12 @@
 using System;
 using System.Linq;
 using Microsoft.OData.Edm;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Edm;
 using Microsoft.OpenApi.OData.Properties;
+using Microsoft.OpenApi.OData.Tests;
 using Xunit;
 
 namespace Microsoft.OpenApi.OData.PathItem.Tests
@@ -60,7 +63,7 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             ODataContext context = new ODataContext(model);
             IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
             Assert.NotNull(entitySet); // guard
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType()));
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType));
 
             // Act
             var pathItem = _pathItemHandler.CreatePathItem(context, path);
@@ -73,6 +76,71 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             Assert.Equal(3, pathItem.Operations.Count);
             Assert.Equal(new OperationType[] { OperationType.Get, OperationType.Patch, OperationType.Delete },
                 pathItem.Operations.Select(o => o.Key));
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CreateEntityPathItemReturnsCorrectPathItemWithPathParameters(bool declarePathParametersOnPathItem)
+        {
+            // Arrange
+            IEdmModel model = EntitySetPathItemHandlerTests.GetEdmModel(annotation: "");
+            OpenApiConvertSettings convertSettings = new OpenApiConvertSettings
+            {
+                DeclarePathParametersOnPathItem = declarePathParametersOnPathItem,
+            };
+            ODataContext context = new ODataContext(model, convertSettings);
+            IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
+            Assert.NotNull(entitySet); // guard
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType));
+
+            // Act
+            var pathItem = _pathItemHandler.CreatePathItem(context, path);
+
+            // Assert
+            Assert.NotNull(pathItem);
+
+            Assert.NotNull(pathItem.Operations);
+            Assert.NotEmpty(pathItem.Operations);
+            Assert.Equal(3, pathItem.Operations.Count);
+            Assert.Equal(new OperationType[] { OperationType.Get, OperationType.Patch, OperationType.Delete },
+                pathItem.Operations.Select(o => o.Key));
+
+            if (declarePathParametersOnPathItem)
+            {
+                Assert.NotEmpty(pathItem.Parameters);
+                Assert.Single(pathItem.Parameters);
+            }
+            else
+            {
+                Assert.Empty(pathItem.Parameters);
+            }
+        }
+
+        [Fact]
+        public void CreateEntityPathItemReturnsCorrectPathItemWithReferences()
+        {
+            // Test that references don't disturb the paths.
+
+            // Arrange
+            IEdmModel model = EdmModelHelper.InheritanceEdmModelAcrossReferences;
+            ODataContext context = new ODataContext(model);
+            IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
+            Assert.NotNull(entitySet); // guard
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType));
+
+            // Act
+            var pathItem = _pathItemHandler.CreatePathItem(context, path);
+
+            // Assert
+            Assert.NotNull(pathItem);
+
+            Assert.NotNull(pathItem.Operations);
+            Assert.NotEmpty(pathItem.Operations);
+            Assert.Equal(3, pathItem.Operations.Count);
+            Assert.Equal(new OperationType[] { OperationType.Get, OperationType.Patch, OperationType.Delete },
+                pathItem.Operations.Select(o => o.Key));
+            Assert.NotEmpty(pathItem.Description);
         }
 
         [Theory]
@@ -147,6 +215,25 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             VerifyPathItemOperations(annotation, expected);
         }
 
+        [Theory]
+        [InlineData(false, new OperationType[] { OperationType.Get, OperationType.Patch, OperationType.Delete })]
+        [InlineData(true, new OperationType[] { OperationType.Get, OperationType.Put, OperationType.Delete })]
+        public void CreateEntityPathItemWorksForUpdateMethodRestrictionsCapabilities(bool updateMethod, OperationType[] expected)
+        {
+            // Arrange
+            string annotation = updateMethod ? $@"
+<Annotation Term=""Org.OData.Capabilities.V1.UpdateRestrictions"">
+  <Record>
+    <PropertyValue Property=""UpdateMethod"">
+      <EnumMember>Org.OData.Capabilities.V1.HttpMethod/PUT</EnumMember>
+    </PropertyValue>
+  </Record>
+</Annotation>" : "";
+
+            // Assert
+            VerifyPathItemOperations(annotation, expected);
+        }
+
         private void VerifyPathItemOperations(string annotation, OperationType[] expected)
         {
             // Arrange
@@ -154,7 +241,7 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             ODataContext context = new ODataContext(model);
             IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
             Assert.NotNull(entitySet); // guard
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType()));
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType));
 
             // Act
             var pathItem = _pathItemHandler.CreatePathItem(context, path);
@@ -165,6 +252,41 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             Assert.NotNull(pathItem.Operations);
             Assert.NotEmpty(pathItem.Operations);
             Assert.Equal(expected, pathItem.Operations.Select(e => e.Key));
+        }
+
+        [Fact]
+        public void CreateEntityPathItemAddsCustomAttributeValuesToPathExtensions()
+        {
+            // Arrange
+            IEdmModel model = EntitySetPathItemHandlerTests.GetEdmModel(annotation: "");
+            ODataContext context = new(model);
+            context.Settings.CustomXMLAttributesMapping = new()
+            {
+                {
+                    "ags:IsHidden", "x-ms-isHidden"
+                },
+                {
+                    "isOwner", "x-ms-isOwner"
+                }
+            };
+            IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
+            Assert.NotNull(entitySet); // guard
+            ODataPath path = new(new ODataNavigationSourceSegment(entitySet), new ODataKeySegment(entitySet.EntityType));
+
+            // Act
+            var pathItem = _pathItemHandler.CreatePathItem(context, path);
+
+            // Assert
+            Assert.NotNull(pathItem);
+            Assert.NotNull(pathItem.Extensions);
+
+            pathItem.Extensions.TryGetValue("x-ms-isHidden", out IOpenApiExtension isHiddenExtension);
+            string isHiddenValue = (isHiddenExtension as OpenApiString)?.Value;
+            Assert.Equal("true", isHiddenValue);
+
+            pathItem.Extensions.TryGetValue("x-ms-isOwner", out IOpenApiExtension isOwnerExtension);
+            string isOwnerValue = (isOwnerExtension as OpenApiString)?.Value;
+            Assert.Equal("true", isOwnerValue);
         }
     }
 

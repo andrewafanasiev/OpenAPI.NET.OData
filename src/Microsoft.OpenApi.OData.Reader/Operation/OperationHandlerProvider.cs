@@ -14,69 +14,100 @@ namespace Microsoft.OpenApi.OData.Operation
     /// </summary>
     internal class OperationHandlerProvider : IOperationHandlerProvider
     {
-        private IDictionary<ODataPathKind, IDictionary<OperationType, IOperationHandler>> _handlers;
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="OperationHandlerProvider"/> class.
-        /// </summary>
-        public OperationHandlerProvider()
-        {
-            _handlers = new Dictionary<ODataPathKind, IDictionary<OperationType, IOperationHandler>>();
+        private readonly IDictionary<ODataPathKind, IDictionary<OperationType, IOperationHandler>> _handlers
+            = new Dictionary<ODataPathKind, IDictionary<OperationType, IOperationHandler>>{
 
             // entity set (Get/Post)
-            _handlers[ODataPathKind.EntitySet] = new Dictionary<OperationType, IOperationHandler>
+            {ODataPathKind.EntitySet, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new EntitySetGetOperationHandler() },
                 {OperationType.Post, new EntitySetPostOperationHandler() }
-            };
+            }},
 
-            // entity (Get/Patch/Delete)
-            _handlers[ODataPathKind.Entity] = new Dictionary<OperationType, IOperationHandler>
+            // entity (Get/Patch/Put/Delete)
+            {ODataPathKind.Entity, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new EntityGetOperationHandler() },
                 {OperationType.Patch, new EntityPatchOperationHandler() },
+                {OperationType.Put, new EntityPutOperationHandler() },
                 {OperationType.Delete, new EntityDeleteOperationHandler() }
-            };
+            }},
 
             // singleton (Get/Patch)
-            _handlers[ODataPathKind.Singleton] = new Dictionary<OperationType, IOperationHandler>
+            {ODataPathKind.Singleton, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new SingletonGetOperationHandler() },
                 {OperationType.Patch, new SingletonPatchOperationHandler() }
-            };
+            }},
 
             // edm operation (Get|Post)
-            _handlers[ODataPathKind.Operation] = new Dictionary<OperationType, IOperationHandler>
+            {ODataPathKind.Operation, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new EdmFunctionOperationHandler() },
                 {OperationType.Post, new EdmActionOperationHandler() }
-            };
+            }},
 
             // edm operation import (Get|Post)
-            _handlers[ODataPathKind.OperationImport] = new Dictionary<OperationType, IOperationHandler>
+            {ODataPathKind.OperationImport, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new EdmFunctionImportOperationHandler() },
                 {OperationType.Post, new EdmActionImportOperationHandler() }
-            };
+            }},
 
-            // navigation property (Get/Patch/Post/Delete)
-            _handlers[ODataPathKind.NavigationProperty] = new Dictionary<OperationType, IOperationHandler>
+            // navigation property (Get/Patch/Put/Post/Delete)
+            {ODataPathKind.NavigationProperty, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new NavigationPropertyGetOperationHandler() },
                 {OperationType.Patch, new NavigationPropertyPatchOperationHandler() },
+                {OperationType.Put, new NavigationPropertyPutOperationHandler() },
                 {OperationType.Post, new NavigationPropertyPostOperationHandler() },
                 {OperationType.Delete, new NavigationPropertyDeleteOperationHandler() }
-            };
+            }},
 
-            // navigatoin property ref (Get/Post/Patch/Delete)
-            _handlers[ODataPathKind.Ref] = new Dictionary<OperationType, IOperationHandler>
+            // navigation property ref (Get/Post/Put/Delete)
+            {ODataPathKind.Ref, new Dictionary<OperationType, IOperationHandler>
             {
                 {OperationType.Get, new RefGetOperationHandler() },
-                {OperationType.Patch, new RefPatchOperationHandler() },
+                {OperationType.Put, new RefPutOperationHandler() },
                 {OperationType.Post, new RefPostOperationHandler() },
                 {OperationType.Delete, new RefDeleteOperationHandler() }
-            };
-        }
+            }},
+
+            // media entity operation (Get|Put|Delete)
+            {ODataPathKind.MediaEntity, new Dictionary<OperationType, IOperationHandler>
+            {
+                {OperationType.Get, new MediaEntityGetOperationHandler() },
+                {OperationType.Put, new MediaEntityPutOperationHandler() },
+                {OperationType.Delete, new MediaEntityDeleteOperationHandler() }
+            }},
+
+            // $metadata operation (Get)
+            {ODataPathKind.Metadata, new Dictionary<OperationType, IOperationHandler>
+            {
+                {OperationType.Get, new MetadataGetOperationHandler() }
+            }},
+
+            // $count operation (Get)
+            {ODataPathKind.DollarCount, new Dictionary<OperationType, IOperationHandler>
+            {
+                {OperationType.Get, new DollarCountGetOperationHandler() }
+            }},
+
+            // .../namespace.typename (cast, get)
+            {ODataPathKind.TypeCast, new Dictionary<OperationType, IOperationHandler>
+            {
+                {OperationType.Get, new ODataTypeCastGetOperationHandler() },
+            }},
+
+            // .../entity/propertyOfComplexType (Get/Patch/Put/Delete)
+            {ODataPathKind.ComplexProperty, new Dictionary<OperationType, IOperationHandler>
+            {
+                {OperationType.Get, new ComplexPropertyGetOperationHandler() },
+                {OperationType.Patch, new ComplexPropertyPatchOperationHandler() },
+                {OperationType.Put, new ComplexPropertyPutOperationHandler() },
+                {OperationType.Post, new ComplexPropertyPostOperationHandler() }
+            }}
+        };
 
         /// <inheritdoc/>
         public IOperationHandler GetHandler(ODataPathKind pathKind, OperationType operationType)

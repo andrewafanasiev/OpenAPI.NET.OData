@@ -1,8 +1,9 @@
-﻿// ------------------------------------------------------------
+// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Extensions;
@@ -18,15 +19,18 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         private NavigationPropertyGetOperationHandler _operationHandler = new NavigationPropertyGetOperationHandler();
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void CreateNavigationGetOperationReturnsCorrectOperation(bool enableOperationId)
+        [InlineData(true, true)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(false, false)]
+        public void CreateNavigationGetOperationReturnsCorrectOperation(bool enableOperationId, bool useHTTPStatusCodeClass2XX)
         {
             // Arrange
             IEdmModel model = EdmModelHelper.TripServiceModel;
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
-                EnableOperationId = enableOperationId
+                EnableOperationId = enableOperationId,
+                UseSuccessStatusCodeRange = useHTTPStatusCodeClass2XX
             };
             ODataContext context = new ODataContext(model, settings);
             IEdmEntitySet people = model.EntityContainer.FindEntitySet("People");
@@ -34,25 +38,27 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             IEdmEntityType person = model.SchemaElements.OfType<IEdmEntityType>().First(c => c.Name == "Person");
             IEdmNavigationProperty navProperty = person.DeclaredNavigationProperties().First(c => c.Name == "Trips");
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType()), new ODataNavigationPropertySegment(navProperty));
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType), new ODataNavigationPropertySegment(navProperty));
 
             // Act
             var operation = _operationHandler.CreateOperation(context, path);
 
             // Assert
             Assert.NotNull(operation);
-            Assert.Equal("Get Trips from People", operation.Summary);
+            Assert.Equal("List trips.", operation.Summary);
+            Assert.Equal("Retrieve a list of trips.", operation.Description);
             Assert.NotNull(operation.Tags);
             var tag = Assert.Single(operation.Tags);
             Assert.Equal("People.Trip", tag.Name);
 
             Assert.NotNull(operation.Parameters);
-            Assert.Equal(9, operation.Parameters.Count);
+            Assert.Equal(10, operation.Parameters.Count);
 
             Assert.Null(operation.RequestBody);
 
             Assert.Equal(2, operation.Responses.Count);
-            Assert.Equal(new string[] { "200", "default" }, operation.Responses.Select(e => e.Key));
+            var statusCode = useHTTPStatusCodeClass2XX ? "2XX" : "200";
+            Assert.Equal(new string[] { statusCode, "default" }, operation.Responses.Select(e => e.Key));
 
             if (enableOperationId)
             {
@@ -62,6 +68,67 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             {
                 Assert.Null(operation.OperationId);
             }
+        }
+
+        [Fact]
+        public void CreateNavigationGetOperationWithTargetPathAnnotationsAndNavigationPropertyAnnotationsReturnsCorrectOperation()
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.TripServiceModel;
+            ODataContext context = new(model, new OpenApiConvertSettings());
+            IEdmEntitySet people = model.EntityContainer.FindEntitySet("People");
+            Assert.NotNull(people);
+
+            IEdmEntityType person = model.SchemaElements.OfType<IEdmEntityType>().First(c => c.Name == "Person");
+            IEdmNavigationProperty navProperty = person.DeclaredNavigationProperties().First(c => c.Name == "Friends");
+            ODataPath path = new(new ODataNavigationSourceSegment(people), new ODataKeySegment(people.EntityType), new ODataNavigationPropertySegment(navProperty));
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            Assert.NotNull(operation);
+            Assert.Equal("List friends", operation.Summary);
+            Assert.Equal("List the friends of a specific person", operation.Description);
+         
+            Assert.NotNull(operation.ExternalDocs);
+            Assert.Equal("Find more info here", operation.ExternalDocs.Description);
+            Assert.Equal("https://learn.microsoft.com/graph/api/person-list-friends?view=graph-rest-1.0", operation.ExternalDocs.Url.ToString());
+
+            Assert.NotNull(operation.Parameters);
+            Assert.Equal(10, operation.Parameters.Count);
+            Assert.Contains(operation.Parameters, x => x.Name == "ConsistencyLevel");
+        }
+
+        [Fact]
+        public void CreateNavigationGetOperationViaComposableFunctionReturnsCorrectOperation()
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.GraphBetaModel;
+            ODataContext context = new(model, new OpenApiConvertSettings()
+            {
+                EnableOperationId = true
+            });
+
+            IEdmEntitySet sites = model.EntityContainer.FindEntitySet("sites");
+            IEdmEntityType site = model.SchemaElements.OfType<IEdmEntityType>().First(c => c.Name == "site");
+            IEdmNavigationProperty analytics = site.DeclaredNavigationProperties().First(c => c.Name == "analytics");
+            IEdmOperation getByPath = model.SchemaElements.OfType<IEdmOperation>().First(f => f.Name == "getByPath");
+
+            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(sites),
+                new ODataKeySegment(site),
+                new ODataOperationSegment(getByPath),
+                new ODataNavigationPropertySegment(analytics));
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            Assert.NotNull(operation);
+            Assert.Equal("sites.getByPath.GetAnalytics", operation.OperationId);
+            Assert.NotNull(operation.Parameters);
+            Assert.Equal(4, operation.Parameters.Count);
+            Assert.Contains(operation.Parameters, x => x.Name == "path");
         }
 
         [Theory]
@@ -142,7 +209,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             ODataContext context = new ODataContext(edmModel);
             IEdmEntitySet entitySet = edmModel.EntityContainer.FindEntitySet("Customers");
             Assert.NotNull(entitySet); // guard
-            IEdmEntityType entityType = entitySet.EntityType();
+            IEdmEntityType entityType = entitySet.EntityType;
 
             IEdmNavigationProperty property = entityType.DeclaredNavigationProperties().FirstOrDefault(c => c.Name == "Orders");
             Assert.NotNull(property);
@@ -205,6 +272,36 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             {
                 Assert.Empty(operation.Security);
             }
+        }
+
+        [Fact]
+        public void CreateNavigationGetOperationWithAlternateKeyReturnsCorrectOperationId()
+        {
+            // Arrange
+            IEdmModel model = EdmModelHelper.GraphBetaModel;
+            ODataContext context = new(model, new OpenApiConvertSettings()
+            {
+                EnableOperationId = true
+            });
+
+            IEdmSingleton singleton = model.EntityContainer.FindSingleton("communications");
+            IEdmEntityType entityType = model.SchemaElements.OfType<IEdmEntityType>().First(c => c.Name == "cloudCommunications");
+            IEdmNavigationProperty navProp = entityType.DeclaredNavigationProperties().First(c => c.Name == "onlineMeetings");
+            IDictionary<string, string> keyMappings = new Dictionary<string, string> { { "joinWebUrl", "joinWebUrl" } };
+
+            ODataPath path = new(new ODataNavigationSourceSegment(singleton),
+                new ODataNavigationPropertySegment(navProp),
+                new ODataKeySegment(entityType, keyMappings)
+                {
+                    IsAlternateKey = true
+                });
+
+            // Act
+            var operation = _operationHandler.CreateOperation(context, path);
+
+            // Assert
+            Assert.NotNull(operation);
+            Assert.Equal("communications.onlineMeetings.GetByJoinWebUrl", operation.OperationId);
         }
     }
 }

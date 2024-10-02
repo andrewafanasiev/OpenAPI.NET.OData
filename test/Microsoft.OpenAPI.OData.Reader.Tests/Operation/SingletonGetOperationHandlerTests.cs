@@ -22,16 +22,26 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         private SingletonGetOperationHandler _operationHandler = new SingletonGetOperationHandler();
 
         [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void CreateSingletonGetOperationReturnsCorrectOperation(bool enableOperationId)
+        [InlineData(true, true)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(false, false)]
+        public void CreateSingletonGetOperationReturnsCorrectOperation(bool enableOperationId, bool useHTTPStatusCodeClass2XX)
         {
             // Arrange
-            IEdmModel model = GetEdmModel("");
+            string annotation = @"
+        <Annotation Term=""Org.OData.Capabilities.V1.ReadRestrictions"">
+          <Record>
+            <PropertyValue Property=""Description"" String=""List users."" />            
+            <PropertyValue Property=""LongDescription"" String=""Retrieve a list of user objects."" />            
+          </Record>
+        </Annotation>";
+            IEdmModel model = GetEdmModel(annotation);
             IEdmSingleton singleton = model.EntityContainer.FindSingleton("Me");
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
-                EnableOperationId = enableOperationId
+                EnableOperationId = enableOperationId,
+                UseSuccessStatusCodeRange = useHTTPStatusCodeClass2XX
             };
             ODataContext context = new ODataContext(model, settings);
             ODataPath path = new ODataPath(new ODataNavigationSourceSegment(singleton));
@@ -41,7 +51,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             // Assert
             Assert.NotNull(get);
-            Assert.Equal("Get Me", get.Summary);
+            Assert.Equal("List users.", get.Summary);
+            Assert.Equal("Retrieve a list of user objects.", get.Description);
             Assert.NotNull(get.Tags);
             var tag = Assert.Single(get.Tags);
             Assert.Equal("Me.Customer", tag.Name);
@@ -53,7 +64,8 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
 
             Assert.NotNull(get.Responses);
             Assert.Equal(2, get.Responses.Count);
-            Assert.Equal(new[] { "200", "default" }, get.Responses.Select(r => r.Key));
+            var statusCode = useHTTPStatusCodeClass2XX ? "2XX" : "200";
+            Assert.Equal(new[] { statusCode, "default" }, get.Responses.Select(r => r.Key));
 
             if (enableOperationId)
             {
@@ -249,7 +261,9 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
         <Property Name=""ID"" Type=""Edm.Int32"" Nullable=""false"" />
       </EntityType>
       <EntityContainer Name =""Default"">
-         <Singleton Name=""Me"" Type=""NS.Customer"" />
+        <Singleton Name=""Me"" Type=""NS.Customer"">
+            <Annotation Term=""Org.OData.Core.V1.Description"" String=""My signed-in instance."" />
+        </Singleton>
       </EntityContainer>
       <Annotations Target=""NS.Default/Me"">
         {0}
@@ -290,7 +304,7 @@ namespace Microsoft.OpenApi.OData.Operation.Tests
             }
             else
             {
-                Assert.Equal(1, get.Parameters.Count);
+                Assert.Single(get.Parameters);
                 Assert.DoesNotContain(queryOption, get.Parameters.Select(p => p.Name));
             }
         }

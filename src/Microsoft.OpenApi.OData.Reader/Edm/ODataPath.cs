@@ -46,6 +46,17 @@ namespace Microsoft.OpenApi.OData.Edm
         }
 
         /// <summary>
+        /// Gets/Sets the support HttpMethods
+        /// </summary>
+        public ISet<string> HttpMethods { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Gets/Sets the path template for this path.
+        /// If it is set, it will be used to generate the path item.
+        /// </summary>
+        public string PathTemplate { get; set; }
+
+        /// <summary>
         /// Gets the segments.
         /// </summary>
         public IList<ODataSegment> Segments { get; private set; }
@@ -106,7 +117,7 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <returns>The count.</returns>
         public int GetCount(bool keySegmentAsDepth)
         {
-            return Segments.Count(c => keySegmentAsDepth ? true : !(c is ODataKeySegment));
+            return Segments.Count(c => keySegmentAsDepth || c is not ODataKeySegment);
         }
 
         /// <summary>
@@ -134,9 +145,8 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(settings, nameof(settings));
 
             // From Open API spec, parameter name is case sensitive, so don't use the IgnoreCase HashSet.
-            // HashSet<string> parameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            HashSet<string> parameters = new HashSet<string>();
-            StringBuilder sb = new StringBuilder();
+            HashSet<string> parameters = new();
+            StringBuilder sb = new();
 
             if (!string.IsNullOrWhiteSpace(settings.PathPrefix))
             {
@@ -148,8 +158,8 @@ namespace Microsoft.OpenApi.OData.Edm
             {
                 string pathItemName = segment.GetPathItemName(settings, parameters);
 
-                if (segment.Kind == ODataSegmentKind.Key &&
-                    (settings.EnableKeyAsSegment == null || !settings.EnableKeyAsSegment.Value))
+                if (segment is ODataKeySegment keySegment &&
+                    (settings.EnableKeyAsSegment == null || !settings.EnableKeyAsSegment.Value || keySegment.IsAlternateKey))
                 {
                     sb.Append("(");
                     sb.Append(pathItemName);
@@ -174,6 +184,17 @@ namespace Microsoft.OpenApi.OData.Edm
             }
 
             return sb.ToString();
+        }
+
+        internal bool SupportHttpMethod(string method)
+        {
+            // If the Httpmethods is empty, let it go
+            if (HttpMethods.Count == 0)
+            {
+                return true;
+            }
+
+            return HttpMethods.Contains(method);
         }
 
         /// <summary>
@@ -216,7 +237,6 @@ namespace Microsoft.OpenApi.OData.Edm
             IDictionary<ODataSegment, IDictionary<string, string>> parameterMapping = new Dictionary<ODataSegment, IDictionary<string, string>>();
 
             // From Open API spec, parameter name is case sensitive, so don't use the IgnoreCase HashSet.
-            // HashSet<string> parameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             HashSet<string> parameters = new HashSet<string>();
 
             foreach (var segment in Segments)
@@ -238,11 +258,38 @@ namespace Microsoft.OpenApi.OData.Edm
         }
 
         /// <summary>
+        /// Get string representation of the Edm Target Path for annotations
+        /// </summary>
+        /// <param name="model">The Edm model.</param>
+        /// <returns>The string representation of the Edm target path.</returns>
+        internal string GetTargetPath(IEdmModel model)
+        {
+            Utils.CheckArgumentNull(model, nameof(model));
+
+            var targetPath = new StringBuilder(model.EntityContainer.FullName());
+
+            bool skipLastSegment = LastSegment is ODataRefSegment 
+                || LastSegment is ODataDollarCountSegment
+                || LastSegment is ODataStreamContentSegment;
+            foreach (var segment in Segments.Where(segment => segment is not ODataKeySegment
+                && !(skipLastSegment && segment == LastSegment)))
+            {
+                targetPath.Append($"/{segment.Identifier}");
+            }
+            return targetPath.ToString();
+        }
+
+        /// <summary>
         /// Output the path string.
         /// </summary>
         /// <returns>The string.</returns>
         public override string ToString()
         {
+            if (PathTemplate != null)
+            {
+                return PathTemplate;
+            }
+
             return "/" + String.Join("/", Segments.Select(e => e.Kind));
         }
 
@@ -258,7 +305,27 @@ namespace Microsoft.OpenApi.OData.Edm
 
         private ODataPathKind CalcPathType()
         {
-            if (Segments.Any(c => c.Kind == ODataSegmentKind.Ref))
+            if (Segments.Count == 1 && Segments.First().Kind == ODataSegmentKind.Metadata)
+            {
+                return ODataPathKind.Metadata;
+            }
+            else if (Segments.Last().Kind == ODataSegmentKind.DollarCount)
+            {
+                return ODataPathKind.DollarCount;
+            }
+            else if (Segments.Last().Kind == ODataSegmentKind.TypeCast)
+            {
+                return ODataPathKind.TypeCast;
+            }
+            else if (Segments.Last().Kind == ODataSegmentKind.ComplexProperty)
+            {
+                return ODataPathKind.ComplexProperty;
+            }
+            else if (Segments.Any(c => c.Kind == ODataSegmentKind.StreamProperty || c.Kind == ODataSegmentKind.StreamContent))
+            {
+                return ODataPathKind.MediaEntity;
+            }
+            else if (Segments.Any(c => c.Kind == ODataSegmentKind.Ref))
             {
                 return ODataPathKind.Ref;
             }
@@ -266,7 +333,7 @@ namespace Microsoft.OpenApi.OData.Edm
             {
                 return ODataPathKind.OperationImport;
             }
-            else if (Segments.Any(c => c.Kind == ODataSegmentKind.Operation))
+            else if (Segments.Last().Kind == ODataSegmentKind.Operation)
             {
                 return ODataPathKind.Operation;
             }
@@ -274,20 +341,15 @@ namespace Microsoft.OpenApi.OData.Edm
             {
                 return ODataPathKind.NavigationProperty;
             }
-
-            if (Segments.Count == 1)
+            else if (Segments.Count == 1 && Segments[0] is ODataNavigationSourceSegment segment)
             {
-                ODataNavigationSourceSegment segment = Segments[0] as ODataNavigationSourceSegment;
-                if (segment != null)
+                if (segment.NavigationSource is IEdmSingleton)
                 {
-                    if (segment.NavigationSource is IEdmSingleton)
-                    {
-                        return ODataPathKind.Singleton;
-                    }
-                    else
-                    {
-                        return ODataPathKind.EntitySet;
-                    }
+                    return ODataPathKind.Singleton;
+                }
+                else
+                {
+                    return ODataPathKind.EntitySet;
                 }
             }
             else if (Segments.Count == 2 && Segments.Last().Kind == ODataSegmentKind.Key)
@@ -297,5 +359,13 @@ namespace Microsoft.OpenApi.OData.Edm
 
             return ODataPathKind.Unknown;
         }
+
+        /// <summary>
+        /// Provides a suffix for the operation id based on the operation path.
+        /// </summary>
+        /// <param name="settings">The settings.</param>
+        ///<returns>The suffix.</returns>
+        public string GetPathHash(OpenApiConvertSettings settings) =>
+            LastSegment.GetPathHash(settings, this);
     }
 }

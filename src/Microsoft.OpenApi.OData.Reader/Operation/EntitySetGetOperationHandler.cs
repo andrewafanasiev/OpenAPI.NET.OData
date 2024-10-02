@@ -3,7 +3,6 @@
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Any;
@@ -26,20 +25,32 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         public override OperationType OperationType => OperationType.Get;
 
+        private ReadRestrictionsType _readRestrictions;
+
+        protected override void Initialize(ODataContext context, ODataPath path)
+        {
+            base.Initialize(context, path);
+
+            _readRestrictions = Context.Model.GetRecord<ReadRestrictionsType>(TargetPath, CapabilitiesConstants.ReadRestrictions);
+            var entityReadRestrictions = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
+            _readRestrictions?.MergePropertiesIfNull(entityReadRestrictions);
+            _readRestrictions ??= entityReadRestrictions;
+        }
+
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
-            // Summary
-            operation.Summary = "Get entities from " + EntitySet.Name;
+            // Summary and Descriptions
+            string placeHolder = "Get entities from " + EntitySet.Name;
+            operation.Summary = _readRestrictions?.Description ?? placeHolder;
+            operation.Description = _readRestrictions?.LongDescription ?? Context.Model.GetDescriptionAnnotation(EntitySet);
 
             // OperationId
             if (Context.Settings.EnableOperationId)
             {
-                string typeName = EntitySet.EntityType().Name;
+                string typeName = EntitySet.EntityType.Name;
                 operation.OperationId = EntitySet.Name + "." + typeName + ".List" + Utils.UpperFirstChar(typeName);
             }
-
-            base.SetBasicInfo(operation);
         }
 
         protected override void SetExtensions(OpenApiOperation operation)
@@ -67,35 +78,35 @@ namespace Microsoft.OpenApi.OData.Operation
             // Capabilities.TopSupported, Capabilities.SkipSupported, Capabilities.SearchRestrictions,
             // Capabilities.FilterRestrictions, and Capabilities.CountRestrictions
             // $top
-            OpenApiParameter parameter = Context.CreateTop(EntitySet);
+            OpenApiParameter parameter = Context.CreateTop(TargetPath) ?? Context.CreateTop(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $skip
-            parameter = Context.CreateSkip(EntitySet);
+            parameter = Context.CreateSkip(TargetPath) ?? Context.CreateSkip(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $search
-            parameter = Context.CreateSearch(EntitySet);
+            parameter = Context.CreateSearch(TargetPath) ?? Context.CreateSearch(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $filter
-            parameter = Context.CreateFilter(EntitySet);
+            parameter = Context.CreateFilter(TargetPath) ?? Context.CreateFilter(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $count
-            parameter = Context.CreateCount(EntitySet);
+            parameter = Context.CreateCount(TargetPath) ?? Context.CreateCount(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
@@ -106,21 +117,21 @@ namespace Microsoft.OpenApi.OData.Operation
             // of just providing a comma-separated list of properties can be expressed via an array-valued
             // parameter with an enum constraint
             // $order
-            parameter = Context.CreateOrderBy(EntitySet);
+            parameter = Context.CreateOrderBy(TargetPath, EntitySet.EntityType) ?? Context.CreateOrderBy(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $select
-            parameter = Context.CreateSelect(EntitySet);
+            parameter = Context.CreateSelect(TargetPath, EntitySet.EntityType) ?? Context.CreateSelect(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
             }
 
             // $expand
-            parameter = Context.CreateExpand(EntitySet);
+            parameter = Context.CreateExpand(TargetPath, EntitySet.EntityType) ?? Context.CreateExpand(EntitySet);
             if (parameter != null)
             {
                 operation.Parameters.Add(parameter);
@@ -130,105 +141,52 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         protected override void SetResponses(OpenApiOperation operation)
         {
-            OpenApiSchema schema = null;
-
-            if (Context.Settings.EnableDerivedTypesReferencesForResponses)
-            {
-                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(EntitySet.EntityType(), Context.Model);
-            }
-
-            if (schema == null)
-            {
-                schema = new OpenApiSchema
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.Schema,
-                        Id = EntitySet.EntityType().FullName()
-                    }
-                };
-            }
-
-            var properties = new Dictionary<string, OpenApiSchema>
-            {
-                {
-                    "value",
-                    new OpenApiSchema
-                    {
-                        Type = "array",
-                        Items = schema
-                    }
-                }
-            };
-
-            if (Context.Settings.EnablePagination)
-            {
-                properties.Add(
-                    "@odata.nextLink",
-                    new OpenApiSchema
-                    {
-                        Type = "string"
-                    });
-            }
-
             operation.Responses = new OpenApiResponses
             {
                 {
-                    Constants.StatusCode200,
+                    Context.Settings.UseSuccessStatusCodeRange ? Constants.StatusCodeClass2XX : Constants.StatusCode200,
                     new OpenApiResponse
                     {
-                        Description = "Retrieved entities",
-                        Content = new Dictionary<string, OpenApiMediaType>
+                        UnresolvedReference = true,
+                        Reference = new OpenApiReference()
                         {
-                            {
-                                Constants.ApplicationJsonMediaType,
-                                new OpenApiMediaType
-                                {
-                                    Schema = new OpenApiSchema
-                                    {
-                                        Title = "Collection of " + EntitySet.EntityType().Name,
-                                        Type = "object",
-                                        Properties = properties
-                                    }
-                                }
-                            }
-                        }
+                            Type = ReferenceType.Response,
+                            Id = $"{EntitySet.EntityType.FullName()}{Constants.CollectionSchemaSuffix}"
+                        },
                     }
                 }
             };
 
-            operation.Responses.Add(Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse());
+            operation.AddErrorResponses(Context.Settings, false);
 
             base.SetResponses(operation);
         }
 
         protected override void SetSecurity(OpenApiOperation operation)
         {
-            ReadRestrictionsType read = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
-            if (read == null || read.Permissions == null)
+            if (_readRestrictions?.Permissions == null)
             {
                 return;
             }
 
-            operation.Security = Context.CreateSecurityRequirements(read.Permissions).ToList();
+            operation.Security = Context.CreateSecurityRequirements(_readRestrictions.Permissions).ToList();
         }
 
         protected override void AppendCustomParameters(OpenApiOperation operation)
         {
-            ReadRestrictionsType read = Context.Model.GetRecord<ReadRestrictionsType>(EntitySet, CapabilitiesConstants.ReadRestrictions);
-            if (read == null)
+            if (_readRestrictions == null)
             {
                 return;
             }
 
-            if (read.CustomHeaders != null)
+            if (_readRestrictions.CustomHeaders != null)
             {
-                AppendCustomParameters(operation, read.CustomHeaders, ParameterLocation.Header);
+                AppendCustomParameters(operation, _readRestrictions.CustomHeaders, ParameterLocation.Header);
             }
 
-            if (read.CustomQueryOptions != null)
+            if (_readRestrictions.CustomQueryOptions != null)
             {
-                AppendCustomParameters(operation, read.CustomQueryOptions, ParameterLocation.Query);
+                AppendCustomParameters(operation, _readRestrictions.CustomQueryOptions, ParameterLocation.Query);
             }
         }
     }

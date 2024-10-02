@@ -13,7 +13,7 @@ namespace Microsoft.OpenApi.OData.PathItem
     /// </summary>
     internal class PathItemHandlerProvider : IPathItemHandlerProvider
     {
-        private IDictionary<ODataPathKind, IPathItemHandler> _handlers = new Dictionary<ODataPathKind, IPathItemHandler>
+        private readonly IDictionary<ODataPathKind, IPathItemHandler> _handlers = new Dictionary<ODataPathKind, IPathItemHandler>
         {
             // EntitySet
             { ODataPathKind.EntitySet, new EntitySetPathItemHandler() },
@@ -35,6 +35,21 @@ namespace Microsoft.OpenApi.OData.PathItem
 
             // Edm Ref
             { ODataPathKind.Ref, new RefPathItemHandler() },
+
+            // Media Entity
+            { ODataPathKind.MediaEntity, new MediaEntityPathItemHandler() },
+
+            // $Metadata
+            { ODataPathKind.Metadata, new MetadataPathItemHandler() },
+
+            // $count
+            { ODataPathKind.DollarCount, new DollarCountPathItemHandler() },
+
+            // ~/groups/{id}/members/microsoft.graph.user
+            { ODataPathKind.TypeCast, new ODataTypeCastPathItemHandler() },
+
+            // ~/users/{id}/mailboxSettings
+            { ODataPathKind.ComplexProperty, new ComplexPropertyItemHandler() },
 
             // Unknown
             { ODataPathKind.Unknown, null },

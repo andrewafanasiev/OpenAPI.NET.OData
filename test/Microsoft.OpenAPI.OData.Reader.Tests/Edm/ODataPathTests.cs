@@ -105,7 +105,7 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Fact]
-        public void KindPropertyReturnsUnknow()
+        public void KindPropertyReturnsUnknown()
         {
             // Arrange
             ODataKeySegment keySegment = new ODataKeySegment(_simpleKeyEntityType);
@@ -198,6 +198,32 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
             Assert.Equal(ODataPathKind.OperationImport, path.Kind);
         }
 
+        [Fact]
+        public void KindPropertyReturnsStreamProperty()
+        {
+            // Arrange
+            ODataNavigationSourceSegment nsSegment = new ODataNavigationSourceSegment(_simpleKeyEntitySet);
+            ODataKeySegment keySegment = new ODataKeySegment(_simpleKeyEntityType);
+            ODataStreamPropertySegment streamPropSegment = new ODataStreamPropertySegment("Logo");
+            ODataPath path = new ODataPath(nsSegment, keySegment, streamPropSegment);
+
+            // Act & Assert
+            Assert.Equal(ODataPathKind.MediaEntity, path.Kind);
+        }
+
+        [Fact]
+        public void KindPropertyReturnsStreamContent()
+        {
+            // Arrange
+            ODataNavigationSourceSegment nsSegment = new ODataNavigationSourceSegment(_simpleKeyEntitySet);
+            ODataKeySegment keySegment = new ODataKeySegment(_simpleKeyEntityType);
+            ODataStreamContentSegment streamContSegment = new ODataStreamContentSegment();
+            ODataPath path = new ODataPath(nsSegment, keySegment, streamContSegment);
+
+            // Act & Assert
+            Assert.Equal(ODataPathKind.MediaEntity, path.Kind);
+        }
+
         [Theory]
         [InlineData(true, true, "/Orders/{Order-Id}")]
         [InlineData(true, false, "/Orders/{Id}")]
@@ -223,10 +249,10 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
         }
 
         [Theory]
-        [InlineData(true, true, "/Customers/FirstName={FirstName},LastName={LastName}")]
-        [InlineData(true, false, "/Customers/FirstName={FirstName},LastName={LastName}")]
-        [InlineData(false, true, "/Customers(FirstName={FirstName},LastName={LastName})")]
-        [InlineData(false, false, "/Customers(FirstName={FirstName},LastName={LastName})")]
+        [InlineData(true, true, "/Customers/FirstName='{FirstName}',LastName='{LastName}'")]
+        [InlineData(true, false, "/Customers/FirstName='{FirstName}',LastName='{LastName}'")]
+        [InlineData(false, true, "/Customers(FirstName='{FirstName}',LastName='{LastName}')")]
+        [InlineData(false, false, "/Customers(FirstName='{FirstName}',LastName='{LastName}')")]
         public void GetPathItemNameReturnsCorrectStringWithMultipleKeySegment(bool keyAsSegment, bool prefix, string expected)
         {
             // Arrange
@@ -236,7 +262,8 @@ namespace Microsoft.OpenApi.OData.Edm.Tests
             OpenApiConvertSettings settings = new OpenApiConvertSettings
             {
                 EnableKeyAsSegment = keyAsSegment,
-                PrefixEntityTypeNameBeforeKey = prefix
+                PrefixEntityTypeNameBeforeKey = prefix,
+                AddSingleQuotesForStringParameters = true,
             };
 
             // Act

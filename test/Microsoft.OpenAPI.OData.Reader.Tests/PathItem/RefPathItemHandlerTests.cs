@@ -57,26 +57,40 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
         }
 
         [Theory]
+        [InlineData(true, new OperationType[] { OperationType.Delete}, true)]
         [InlineData(true, new OperationType[] { OperationType.Get, OperationType.Post, OperationType.Delete })]
-        [InlineData(false, new OperationType[] { OperationType.Get, OperationType.Patch, OperationType.Delete })]
-        public void CreateNavigationPropertyRefPathItemReturnsCorrectPathItem(bool collectionNav, OperationType[] expected)
+        [InlineData(false, new OperationType[] { OperationType.Get, OperationType.Put, OperationType.Delete })]
+        public void CreateNavigationPropertyRefPathItemReturnsCorrectPathItem(bool collectionNav, OperationType[] expected, bool indexedColNav = false)
         {
             // Arrange
             IEdmModel model = GetEdmModel("");
             ODataContext context = new ODataContext(model);
             IEdmEntitySet entitySet = model.EntityContainer.FindEntitySet("Customers");
             Assert.NotNull(entitySet); // guard
-            IEdmEntityType entityType = entitySet.EntityType();
+            IEdmEntityType entityType = entitySet.EntityType;
 
             IEdmNavigationProperty property = entityType.DeclaredNavigationProperties()
                 .FirstOrDefault(c => !c.ContainsTarget &&
                 (collectionNav ? c.TargetMultiplicity() == EdmMultiplicity.Many : c.TargetMultiplicity() != EdmMultiplicity.Many));
             Assert.NotNull(property);
 
-            ODataPath path = new ODataPath(new ODataNavigationSourceSegment(entitySet),
+            ODataPath path;
+            if (collectionNav && indexedColNav)
+            {
+                // DELETE ~/entityset/{key}/collection-valued-Nav/{key}/$ref
+                path = new ODataPath(new ODataNavigationSourceSegment(entitySet),
+                new ODataKeySegment(entityType),
+                new ODataNavigationPropertySegment(property),
+                new ODataKeySegment(property.ToEntityType()),
+                ODataRefSegment.Instance);
+            }
+            else
+            {
+                path = new ODataPath(new ODataNavigationSourceSegment(entitySet),
                 new ODataKeySegment(entityType),
                 new ODataNavigationPropertySegment(property),
                 ODataRefSegment.Instance);
+            }
 
             // Act
             var pathItem = _pathItemHandler.CreatePathItem(context, path);
@@ -87,6 +101,7 @@ namespace Microsoft.OpenApi.OData.PathItem.Tests
             Assert.NotNull(pathItem.Operations);
             Assert.NotEmpty(pathItem.Operations);
             Assert.Equal(expected, pathItem.Operations.Select(o => o.Key));
+            Assert.NotEmpty(pathItem.Description);
         }
 
         public static IEdmModel GetEdmModel(string annotation)

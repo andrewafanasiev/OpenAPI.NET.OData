@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------
+// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
@@ -78,12 +78,7 @@ namespace Microsoft.OpenApi.OData.Tests
                 Assert.Equal(@"{
   ""type"": ""array"",
   ""items"": {
-    ""anyOf"": [
-      {
-        ""$ref"": ""#/components/schemas/Microsoft.OData.Service.Sample.TrippinInMemory.Models.AirportLocation""
-      }
-    ],
-    ""nullable"": true
+    ""$ref"": ""#/components/schemas/Microsoft.OData.Service.Sample.TrippinInMemory.Models.AirportLocation""
   }
 }".ChangeLineBreaks(), json);
             }           
@@ -185,26 +180,40 @@ namespace Microsoft.OpenApi.OData.Tests
             // & Assert
             Assert.NotNull(schema);
 
-            // Although the schema will be set
-            // for openApiV2 nullable will not be serialized
-            Assert.Equal(isNullable, schema.Nullable);
-
+            
             if (specVersion == OpenApiSpecVersion.OpenApi2_0)
             {
                 Assert.NotNull(schema.Reference);
                 Assert.Null(schema.AnyOf);
                 Assert.Equal(ReferenceType.Schema, schema.Reference.Type);
                 Assert.Equal(enumType.FullTypeName(), schema.Reference.Id);
+                Assert.Equal(isNullable, schema.Nullable);
             }
             else
             {
-                Assert.Null(schema.Reference);
-                Assert.NotNull(schema.AnyOf);
-                Assert.NotEmpty(schema.AnyOf);
-                var anyOf = Assert.Single(schema.AnyOf);
-                Assert.NotNull(anyOf.Reference);
-                Assert.Equal(ReferenceType.Schema, anyOf.Reference.Type);
-                Assert.Equal(enumType.FullTypeName(), anyOf.Reference.Id);
+                
+                if (isNullable)
+                {
+                    Assert.NotNull(schema.AnyOf);
+                    Assert.NotEmpty(schema.AnyOf);
+                    Assert.Null(schema.Reference);
+                    Assert.Equal(2, schema.AnyOf.Count);
+                    var anyOfRef = schema.AnyOf.FirstOrDefault();
+                    Assert.NotNull(anyOfRef.Reference);
+                    Assert.Equal(ReferenceType.Schema, anyOfRef.Reference.Type);
+                    Assert.Equal(enumType.FullTypeName(), anyOfRef.Reference.Id);
+                    var anyOfNull = schema.AnyOf.Skip(1).FirstOrDefault();
+                    Assert.NotNull(anyOfNull.Type);
+                    Assert.Equal("object", anyOfNull.Type);
+                    Assert.True(anyOfNull.Nullable);
+                }
+                else
+                {
+                    Assert.Null(schema.AnyOf);
+                    Assert.NotNull(schema.Reference);
+                    Assert.Equal(ReferenceType.Schema, schema.Reference.Type);
+                    Assert.Equal(enumType.FullTypeName(), schema.Reference.Id);
+                }             
             }
         }
 
@@ -242,7 +251,8 @@ namespace Microsoft.OpenApi.OData.Tests
                 Assert.Null(schema.Reference);
                 Assert.NotNull(schema.AnyOf);
                 Assert.NotEmpty(schema.AnyOf);
-                var anyOf = Assert.Single(schema.AnyOf);
+                Assert.Equal(2, schema.AnyOf.Count);
+                var anyOf = schema.AnyOf.FirstOrDefault();
                 Assert.NotNull(anyOf.Reference);
                 Assert.Equal(ReferenceType.Schema, anyOf.Reference.Type);
                 Assert.Equal(complex.FullTypeName(), anyOf.Reference.Id);
@@ -283,10 +293,14 @@ namespace Microsoft.OpenApi.OData.Tests
                 Assert.Null(schema.Reference);
                 Assert.NotNull(schema.AnyOf);
                 Assert.NotEmpty(schema.AnyOf);
-                var anyOf = Assert.Single(schema.AnyOf);
-                Assert.NotNull(anyOf.Reference);
-                Assert.Equal(ReferenceType.Schema, anyOf.Reference.Type);
-                Assert.Equal(entity.FullTypeName(), anyOf.Reference.Id);
+                var anyOfRef = schema.AnyOf.FirstOrDefault();
+                Assert.NotNull(anyOfRef.Reference);
+                Assert.Equal(ReferenceType.Schema, anyOfRef.Reference.Type);
+                Assert.Equal(entity.FullTypeName(), anyOfRef.Reference.Id);
+                var anyOfNull = schema.AnyOf.Skip(1).FirstOrDefault();
+                Assert.NotNull(anyOfNull.Type);
+                Assert.Equal("object", anyOfNull.Type);
+                Assert.True(anyOfNull.Nullable);
             }
         }
 
@@ -385,14 +399,14 @@ namespace Microsoft.OpenApi.OData.Tests
             if (IEEE754Compatible)
             {
                 Assert.Null(schema.Type);
-                Assert.NotNull(schema.AnyOf);
-                Assert.Equal(2, schema.AnyOf.Count);
-                Assert.Equal(new[] { "number", "string" }, schema.AnyOf.Select(a => a.Type));
+                Assert.NotNull(schema.OneOf);
+                Assert.Equal(2, schema.OneOf.Count);
+                Assert.Equal(new[] { "number", "string" }, schema.OneOf.Select(a => a.Type));
             }
             else
             {
                 Assert.Equal("number", schema.Type);
-                Assert.Null(schema.AnyOf);
+                Assert.Null(schema.OneOf);
             }
 
             Assert.Equal(isNullable, schema.Nullable);
@@ -423,9 +437,9 @@ namespace Microsoft.OpenApi.OData.Tests
             if (IEEE754Compatible)
             {
                 Assert.Null(schema.Type);
-                Assert.NotNull(schema.AnyOf);
-                Assert.Equal(2, schema.AnyOf.Count);
-                Assert.Equal(new[] { "integer", "string" }, schema.AnyOf.Select(a => a.Type));
+                Assert.NotNull(schema.OneOf);
+                Assert.Equal(2, schema.OneOf.Count);
+                Assert.Equal(new[] { "integer", "string" }, schema.OneOf.Select(a => a.Type));
             }
             else
             {
@@ -488,13 +502,13 @@ namespace Microsoft.OpenApi.OData.Tests
             // & Assert
             Assert.Null(schema.Type);
 
-            Assert.Equal("double", schema.Format);
+            Assert.Equal("double", schema.OneOf.FirstOrDefault(x => !string.IsNullOrEmpty(x.Format))?.Format);
             Assert.Equal(isNullable, schema.Nullable);
 
-            Assert.Null(schema.OneOf);
+            Assert.Null(schema.AnyOf);
 
-            Assert.NotNull(schema.AnyOf);
-            Assert.Equal(3, schema.AnyOf.Count);
+            Assert.NotNull(schema.OneOf);
+            Assert.Equal(3, schema.OneOf.Count);
         }
 
         [Theory]
@@ -514,13 +528,13 @@ namespace Microsoft.OpenApi.OData.Tests
             // & Assert
             Assert.Null(schema.Type);
 
-            Assert.Equal("float", schema.Format);
+            Assert.Equal("float", schema.OneOf.FirstOrDefault(x => !string.IsNullOrEmpty(x.Format))?.Format);
             Assert.Equal(isNullable, schema.Nullable);
 
-            Assert.Null(schema.OneOf);
+            Assert.Null(schema.AnyOf);
 
-            Assert.NotNull(schema.AnyOf);
-            Assert.Equal(3, schema.AnyOf.Count);
+            Assert.NotNull(schema.OneOf);
+            Assert.Equal(3, schema.OneOf.Count);
         }
         #endregion
     }

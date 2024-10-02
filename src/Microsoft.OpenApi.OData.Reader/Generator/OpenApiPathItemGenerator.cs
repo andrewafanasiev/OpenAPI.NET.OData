@@ -4,6 +4,8 @@
 // ------------------------------------------------------------
 
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.OData.Edm;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Edm;
@@ -41,10 +43,49 @@ namespace Microsoft.OpenApi.OData.Generator
                     continue;
                 }
 
-                pathItems.Add(path.GetPathItemName(settings), handler.CreatePathItem(context, path));
+                OpenApiPathItem pathItem = handler.CreatePathItem(context, path);
+                if (!pathItem.Operations.Any())
+                {
+                    continue;
+                }
+
+                pathItems.TryAddPath(context, path, pathItem);
+            }
+
+            if (settings.ShowRootPath)
+            {
+                OpenApiPathItem rootPath = new()
+                {
+                    Operations = new Dictionary<OperationType, OpenApiOperation> {
+                        {
+                            OperationType.Get, new OpenApiOperation {
+                                OperationId = "graphService.GetGraphService",
+                                Responses = new OpenApiResponses()
+                                {
+                                    { "200",new OpenApiResponse() {
+                                        Description = "OK",
+                                        Links = CreateRootLinks(context.EntityContainer)
+                                    }
+                                }
+                            }
+                          }
+                        }
+                    }
+                };
+                pathItems.Add("/", rootPath);
             }
 
             return pathItems;
+        }
+
+        private static IDictionary<string, OpenApiLink> CreateRootLinks(IEdmEntityContainer entityContainer)
+        {
+            var links = new Dictionary<string, OpenApiLink>();
+            foreach (var element in entityContainer.Elements)
+            {
+                links.Add(element.Name, new OpenApiLink());
+            }
+            return links;
         }
     }
 }

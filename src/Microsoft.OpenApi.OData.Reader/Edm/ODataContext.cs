@@ -6,12 +6,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Vocabularies;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.OData.Generator;
 using Microsoft.OpenApi.OData.Operation;
 using Microsoft.OpenApi.OData.PathItem;
 using Microsoft.OpenApi.OData.Vocabulary.Capabilities;
+using Microsoft.OpenApi.OData.Vocabulary.Core;
 
 namespace Microsoft.OpenApi.OData.Edm
 {
@@ -49,7 +51,8 @@ namespace Microsoft.OpenApi.OData.Edm
             OperationHanderProvider = new OperationHandlerProvider();
             PathItemHanderProvider = new PathItemHandlerProvider();
 
-            _pathProvider = new ODataPathProvider();
+            // If no path provider, use the default path provider.
+            _pathProvider = settings.PathProvider ?? new ODataPathProvider();
 
             if (settings.EnableKeyAsSegment != null)
             {
@@ -157,18 +160,25 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <returns>All acceptable OData path.</returns>
         private IEnumerable<ODataPath> LoadAllODataPaths()
         {
-            IEnumerable<ODataPath> allPaths = _pathProvider.GetPaths(Model);
+            IEnumerable<ODataPath> allPaths = _pathProvider.GetPaths(Model, Settings);
             foreach (var path in allPaths)
             {
                 if ((path.Kind == ODataPathKind.Operation && !Settings.EnableOperationPath) ||
                     (path.Kind == ODataPathKind.OperationImport && !Settings.EnableOperationImportPath) ||
-                    (path.Kind == ODataPathKind.NavigationProperty && !Settings.EnableNavigationPropertyPath))
+                    ((path.Kind == ODataPathKind.NavigationProperty || path.Kind == ODataPathKind.ComplexProperty) && !Settings.EnableNavigationPropertyPath))
                 {
                     continue;
                 }
 
                 yield return path;
             }
+        }
+        internal IEnumerable<RevisionRecord> GetDeprecationInformations(IEdmVocabularyAnnotatable annotable)
+        {
+            return annotable == null ?
+                Enumerable.Empty<RevisionRecord>() :
+                    (Model?.GetCollection<RevisionRecord>(annotable, CoreConstants.Revisions)?.Where(x => x.Kind == RevisionKind.Deprecated) ?? 
+                    Enumerable.Empty<RevisionRecord>());
         }
     }
 }

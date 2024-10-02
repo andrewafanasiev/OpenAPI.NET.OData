@@ -26,7 +26,7 @@ namespace Microsoft.OpenApi.OData.Edm
         Singleton,
 
         /// <summary>
-        /// Represents an operation (function or action) path, for example: ~/users/NS.findRooms(roomId={roomId})
+        /// Represents an operation (function or action) path, for example: ~/users/NS.findRooms(roomId='{roomId}')
         /// </summary>
         Operation,
 
@@ -36,18 +36,43 @@ namespace Microsoft.OpenApi.OData.Edm
         OperationImport,
 
         /// <summary>
-        /// Represents an navigation propert path, for example: ~/users/{id}/onedrive
+        /// Represents an navigation property path, for example: ~/users/{id}/onedrive
         /// </summary>
         NavigationProperty,
 
         /// <summary>
-        /// Represents an navigation propert $ref path, for example: ~/users/{id}/onedrive/$ref
+        /// Represents an navigation property $ref path, for example: ~/users/{id}/onedrive/$ref
         /// </summary>
         Ref,
 
         /// <summary>
+        /// Represents a media entity path, for example: ~/me/photo/$value or ~/reports/deviceConfigurationUserActivity/Content
+        /// </summary>
+        MediaEntity,
+
+        /// <summary>
+        /// Represents a $metadata path
+        /// </summary>
+        Metadata,
+
+        /// <summary>
+        /// Represents a $count path, for example: ~/customers/$count
+        /// </summary>
+        DollarCount,
+
+        /// <summary>
+        /// Represents a type cast path, for example: ~/groups/{id}/members/microsoft.graph.user
+        /// </summary>
+        TypeCast,
+
+        /// <summary>
+        /// Represents a path item for a property of type complex.
+        /// </summary>
+        ComplexProperty,
+
+        /// <summary>
         /// Represents an un-supported/unknown path.
         /// </summary>
-        Unknown
-    }
+        Unknown,
+	}
 }

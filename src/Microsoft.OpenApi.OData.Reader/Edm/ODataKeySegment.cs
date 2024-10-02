@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OData.Edm;
+using Microsoft.OData.Edm.Vocabularies;
 using Microsoft.OpenApi.OData.Common;
 
 namespace Microsoft.OpenApi.OData.Edm
@@ -25,6 +26,27 @@ namespace Microsoft.OpenApi.OData.Edm
             EntityType = entityType ?? throw Error.ArgumentNull(nameof(entityType));
         }
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="ODataKeySegment"/> class.
+        /// </summary>
+        /// <param name="entityType">The entity type contains the keys.</param>
+        /// <param name="keyMappings">The key/template mappings.</param>
+        public ODataKeySegment(IEdmEntityType entityType, IDictionary<string, string> keyMappings)
+        {
+            EntityType = entityType ?? throw Error.ArgumentNull(nameof(entityType));
+            KeyMappings = keyMappings ?? throw Error.ArgumentNull(nameof(keyMappings));
+        }
+
+        /// <summary>
+        /// Is true if key segment is alternate key
+        /// </summary>
+        public bool IsAlternateKey { get; set; } = false;
+
+        /// <summary>
+        /// Gets the key/template mappings.
+        /// </summary>
+        public IDictionary<string, string> KeyMappings { get; }
+
         /// <inheritdoc />
         public override IEdmEntityType EntityType { get; }
 
@@ -36,20 +58,38 @@ namespace Microsoft.OpenApi.OData.Edm
         {
             get
             {
-                IList<string> keys = new List<string>();
-                foreach (var key in EntityType.Key())
-                {
-                    keys.Add(key.Name);
-                }
+                IList<string> keys = IsAlternateKey ? 
+                    KeyMappings.Values.ToList() : 
+                    EntityType.Key().Select(static x => x.Name).ToList();
 
-                return String.Join(",", keys);
+                return string.Join(",", keys);
             }
         }
 
         /// <inheritdoc />
-        public override string GetPathItemName(OpenApiConvertSettings settings, HashSet<string> parameters)
+		public override IEnumerable<IEdmVocabularyAnnotatable> GetAnnotables()
+		{
+			return Enumerable.Empty<IEdmVocabularyAnnotatable>();
+		}
+
+		/// <inheritdoc />
+		public override string GetPathItemName(OpenApiConvertSettings settings, HashSet<string> parameters)
         {
             Utils.CheckArgumentNull(settings, nameof(settings));
+
+            // Use the output key/template mapping
+            if (KeyMappings != null)
+            {
+                if (KeyMappings.Count == 1 && !IsAlternateKey)
+                {
+                    var key = KeyMappings.First();
+                    return $"{{{key.Value}}}";
+                }
+                else
+                {
+                    return string.Join(",", KeyMappings.Select(x => x.Key + "='{" + x.Value + "}'"));
+                }
+            }
 
             IList<IEdmStructuralProperty> keys = EntityType.Key().ToList();
             if (keys.Count() == 1)
@@ -73,16 +113,28 @@ namespace Microsoft.OpenApi.OData.Edm
                 foreach (var keyProperty in keys)
                 {
                     string name = Utils.GetUniqueName(keyProperty.Name, parameters);
-                    keyStrings.Add(keyProperty.Name + "={" + name + "}");
+                    var quote = keyProperty.Type.Definition.ShouldPathParameterBeQuoted(settings) ? "'" : string.Empty;
+                    keyStrings.Add($"{keyProperty.Name}={quote}{{{name}}}{quote}");
                 }
 
-                return String.Join(",", keyStrings);
+                return string.Join(",", keyStrings);
             }
         }
 
         internal IDictionary<string, string> GetKeyNameMapping(OpenApiConvertSettings settings, HashSet<string> parameters)
         {
+            // Use the output key/template mapping
             IDictionary<string, string> keyNamesMapping = new Dictionary<string, string>();
+            if (KeyMappings != null)
+            {
+                foreach (var keyName in KeyMappings)
+                {
+                    keyNamesMapping[keyName.Key] = keyName.Value;
+                }
+
+                return keyNamesMapping;
+            }
+
             IList<IEdmStructuralProperty> keys = EntityType.Key().ToList();
             if (keys.Count() == 1)
             {

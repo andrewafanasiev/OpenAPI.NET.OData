@@ -29,20 +29,10 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
-            {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
-                {
-                    IEdmIntegerConstantExpression value = property.Value as IEdmIntegerConstantExpression;
-                    if (value != null)
-                    {
-                        return value.Value;
-                    }
-                }
-            }
-
-            return null;
+            return (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmIntegerConstantExpression value) ?
+                value.Value :
+                null;
         }
 
         /// <summary>
@@ -56,20 +46,10 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
-            {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
-                {
-                    IEdmStringConstantExpression value = property.Value as IEdmStringConstantExpression;
-                    if (value != null)
-                    {
-                        return value.Value;
-                    }
-                }
-            }
-
-            return null;
+            return (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+            property.Value is IEdmStringConstantExpression value) ?
+                value.Value :
+                null;
         }
 
         /// <summary>
@@ -83,20 +63,27 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
-            {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
-                {
-                    IEdmBooleanConstantExpression value = property.Value as IEdmBooleanConstantExpression;
-                    if (value != null)
-                    {
-                        return value.Value;
-                    }
-                }
-            }
+            return (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmBooleanConstantExpression value) ?
+                value.Value :
+                null;
+        }
 
-            return null;
+        /// <summary>
+        /// Get the DateTime value from the record using the given property name.
+        /// </summary>
+        /// <param name="record">The record expression.</param>
+        /// <param name="propertyName">The property name.</param>
+        /// <returns>The DateTime value or null.</returns>
+        public static DateTime? GetDateTime(this IEdmRecordExpression record, string propertyName)
+        {
+            Utils.CheckArgumentNull(record, nameof(record));
+            Utils.CheckArgumentNull(propertyName, nameof(propertyName));
+
+            return (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmDateConstantExpression value) ?
+                value.Value :
+                null;
         }
 
         /// <summary>
@@ -107,27 +94,27 @@ namespace Microsoft.OpenApi.OData.Edm
         /// <param name="propertyName">The property name.</param>
         /// <returns>The Enum value or null.</returns>
         public static T? GetEnum<T>(this IEdmRecordExpression record, string propertyName)
-            where T : struct
+            where T : struct, Enum
         {
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
+            if (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal))
+                is IEdmPropertyConstructor property &&
+                property.Value is IEdmEnumMemberExpression value &&
+                value.EnumMembers != null &&
+                value.EnumMembers.Any())
             {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
+                long combinedValue = 0;
+                foreach (var enumMember in value.EnumMembers)
                 {
-                    IEdmEnumMemberExpression value = property.Value as IEdmEnumMemberExpression;
-                    if (value != null && value.EnumMembers != null && value.EnumMembers.Any())
+                    if (Enum.TryParse(enumMember.Name, out T enumValue))
                     {
-                        IEdmEnumMember member = value.EnumMembers.First();
-                        T result;
-                        if (Enum.TryParse(member.Name, out result))
-                        {
-                            return result;
-                        }
+                        combinedValue |= Convert.ToInt64(enumValue);
                     }
                 }
+
+                return (T)Enum.ToObject(typeof(T), combinedValue);
             }
 
             return null;
@@ -146,16 +133,12 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-            if (property != null)
+            if (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmRecordExpression recordValue)
             {
-                IEdmRecordExpression recordValue = property.Value as IEdmRecordExpression;
-                if (recordValue != null)
-                {
-                    T a = new T();
-                    a.Initialize(recordValue);
-                    return a;
-                }
+                T a = new();
+                a.Initialize(recordValue);
+                return a;
             }
 
             return default;
@@ -172,20 +155,10 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
-            {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
-                {
-                    IEdmPathExpression value = property.Value as IEdmPathExpression;
-                    if (value != null)
-                    {
-                        return value.Path;
-                    }
-                }
-            }
-
-            return null;
+            return (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmPathExpression value) ?
+                value.Path :
+                null;
         }
 
         /// <summary>
@@ -199,25 +172,18 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            if (record.Properties != null)
+            if (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmCollectionExpression value && value.Elements != null)
             {
-                IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-                if (property != null)
-                {
-                    IEdmCollectionExpression value = property.Value as IEdmCollectionExpression;
-                    if (value != null && value.Elements != null)
-                    {
-                        IList<string> properties = new List<string>();
-                        foreach (var path in value.Elements.Select(e => e as IEdmPathExpression))
-                        {
-                            properties.Add(path.Path);
-                        }
+                IList<string> properties = 
+                    value.Elements
+                        .OfType<IEdmPathExpression>()
+                        .Select(x => x.Path)
+                        .ToList();
 
-                        if (properties.Any())
-                        {
-                            return properties;
-                        }
-                    }
+                if (properties.Any())
+                {
+                    return properties;
                 }
             }
 
@@ -235,21 +201,14 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-            if (property != null)
+            if (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmCollectionExpression collection && collection.Elements != null)
             {
-                IEdmCollectionExpression collection = property.Value as IEdmCollectionExpression;
-                if (collection != null && collection.Elements != null)
-                {
-                    IList<string> items = new List<string>();
-                    foreach (var item in collection.Elements)
-                    {
-                        IEdmStringConstantExpression itemRecord = item as IEdmStringConstantExpression;
-                        items.Add(itemRecord.Value);
-                    }
-
-                    return items;
-                }
+                IList<string> items = collection.Elements
+                                    .OfType<IEdmStringConstantExpression>()
+                    .Select(x => x.Value)
+                    .ToList();
+                return items;
             }
 
             return null;
@@ -268,22 +227,18 @@ namespace Microsoft.OpenApi.OData.Edm
             Utils.CheckArgumentNull(record, nameof(record));
             Utils.CheckArgumentNull(propertyName, nameof(propertyName));
 
-            IEdmPropertyConstructor property = record.Properties.FirstOrDefault(e => e.Name == propertyName);
-            if (property != null)
+            if (record.Properties?.FirstOrDefault(e => propertyName.Equals(e.Name, StringComparison.Ordinal)) is IEdmPropertyConstructor property &&
+                property.Value is IEdmCollectionExpression collection && collection.Elements != null)
             {
-                IEdmCollectionExpression collection = property.Value as IEdmCollectionExpression;
-                if (collection != null && collection.Elements != null)
+                IList<T> items = new List<T>();
+                foreach (IEdmRecordExpression item in collection.Elements.OfType<IEdmRecordExpression>())
                 {
-                    IList<T> items = new List<T>();
-                    foreach (IEdmRecordExpression item in collection.Elements.OfType<IEdmRecordExpression>())
-                    {
-                        T a = new T();
-                        a.Initialize(item);
-                        items.Add(a);
-                    }
-
-                    return items;
+                    T a = new();
+                    a.Initialize(item);
+                    items.Add(a);
                 }
+
+                return items;
             }
 
             return null;

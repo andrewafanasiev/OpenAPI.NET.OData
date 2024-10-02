@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------
+// ------------------------------------------------------------
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
@@ -15,6 +15,8 @@ using Microsoft.OpenApi.OData.Common;
 using Microsoft.OpenApi.Exceptions;
 using System.Linq;
 using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.MicrosoftExtensions;
+using Microsoft.OpenApi.OData.Vocabulary.Core;
 
 namespace Microsoft.OpenApi.OData.Generator
 {
@@ -38,14 +40,25 @@ namespace Microsoft.OpenApi.OData.Generator
 
             // Each entity type, complex type, enumeration type, and type definition directly
             // or indirectly used in the paths field is represented as a name / value pair of the schemas map.
-            foreach (var element in context.Model.SchemaElements.Where(c => !c.Namespace.StartsWith("Org.OData.")))
+            // Ideally this would be driven off the types used in the paths, but in practice, it is simply
+            // all of the types present in the model.
+            IEnumerable<IEdmSchemaElement> elements = context.Model.GetAllElements();
+
+            foreach (var element in elements)
             {
                 switch (element.SchemaElementKind)
                 {
                     case EdmSchemaElementKind.TypeDefinition: // Type definition
                         {
                             IEdmType reference = (IEdmType)element;
-                            schemas.Add(reference.FullTypeName(), context.CreateSchemaTypeSchema(reference));
+                            var fullTypeName = reference.FullTypeName();
+                            if(reference is IEdmComplexType &&
+                                fullTypeName.Split(new char[] {'.'}, StringSplitOptions.RemoveEmptyEntries)
+                                            .Last()
+                                            .Equals(context.Settings.InnerErrorComplexTypeName, StringComparison.Ordinal))
+                                continue;
+                            
+                            schemas.Add(fullTypeName, context.CreateSchemaTypeSchema(reference));
                         }
                         break;
                 }
@@ -63,7 +76,222 @@ namespace Microsoft.OpenApi.OData.Generator
                 schemas[schema.Key] = schema.Value;
             }
 
+            if(context.Settings.EnableDollarCountPath)
+                schemas[Constants.DollarCountSchemaName] = new OpenApiSchema {
+                    Type = "integer",
+                    Format = "int32"
+                };
+
+            schemas = schemas.Concat(context.GetAllCollectionEntityTypes()
+                                        .Select(x => new KeyValuePair<string, OpenApiSchema>(
+                                                            $"{(x is IEdmEntityType eType ? eType.FullName() : x.FullTypeName())}{Constants.CollectionSchemaSuffix}",
+                                                            CreateCollectionSchema(context, x)))
+                                        .Where(x => !schemas.ContainsKey(x.Key)))
+                            .Concat(context.GetAllCollectionComplexTypes()
+                                        .Select(x => new KeyValuePair<string, OpenApiSchema>(
+                                                            $"{x.FullTypeName()}{Constants.CollectionSchemaSuffix}",
+                                                            CreateCollectionSchema(context, x)))
+                                        .Where(x => !schemas.ContainsKey(x.Key)))
+                            .ToDictionary(x => x.Key, x => x.Value);
+            
+            if(context.HasAnyNonContainedCollections())                                        
+            {
+                schemas[$"String{Constants.CollectionSchemaSuffix}"] = CreateCollectionSchema(context, new OpenApiSchema { Type = Constants.StringType }, Constants.StringType);
+            }
+
+            schemas[Constants.ReferenceUpdateSchemaName] = new()
+            {
+                Type = Constants.ObjectType,
+                Properties = new Dictionary<string, OpenApiSchema>
+                    {
+                        {Constants.OdataId, new OpenApiSchema { Type = Constants.StringType, Nullable = false }},
+                        {Constants.OdataType, new OpenApiSchema { Type = Constants.StringType, Nullable = true }},
+                    }
+            };
+
+            schemas[Constants.ReferenceCreateSchemaName] = new()
+            {
+                Type = Constants.ObjectType,
+                Properties = new Dictionary<string, OpenApiSchema>
+                {
+                    {Constants.OdataId, new OpenApiSchema { Type = Constants.StringType, Nullable = false }}
+                },
+                AdditionalProperties = new OpenApiSchema { Type = Constants.ObjectType }
+            };
+
+            schemas[Constants.ReferenceNumericName] = new()
+            {
+                Type = Constants.StringType,
+                Nullable = true,
+                Enum =
+                [
+                    new OpenApiString("-INF"),
+                    new OpenApiString("INF"),
+                    new OpenApiString("NaN")
+                ]
+            };
+
+            if (context.Settings.EnableODataAnnotationReferencesForResponses)
+            {
+                // @odata.nextLink + @odata.count
+                if (context.Settings.EnablePagination || context.Settings.EnableCount)
+                {
+                    schemas[Constants.BaseCollectionPaginationCountResponse] = new()
+                    {
+                        Title = "Base collection pagination and count responses",
+                        Type = Constants.ObjectType,
+                    };
+
+                    if (context.Settings.EnableCount)
+                        schemas[Constants.BaseCollectionPaginationCountResponse].Properties.Add(ODataConstants.OdataCount);
+                    if (context.Settings.EnablePagination)
+                        schemas[Constants.BaseCollectionPaginationCountResponse].Properties.Add(ODataConstants.OdataNextLink);
+                }
+
+                // @odata.nextLink + @odata.deltaLink
+                if (context.Model.SchemaElements.OfType<IEdmFunction>().Any(static x => x.IsDeltaFunction()))
+                {
+                    schemas[Constants.BaseDeltaFunctionResponse] = new()
+                    {
+                        Title = "Base delta function response",
+                        Type = Constants.ObjectType
+                    };
+                    schemas[Constants.BaseDeltaFunctionResponse].Properties.Add(ODataConstants.OdataNextLink);
+                    schemas[Constants.BaseDeltaFunctionResponse].Properties.Add(ODataConstants.OdataDeltaLink);
+                }
+            }
+
             return schemas;
+        }
+        internal static bool HasAnyNonContainedCollections(this ODataContext context)
+        {
+            return context.Model
+                    .SchemaElements
+                    .OfType<IEdmStructuredType>()
+                    .SelectMany(x => x.NavigationProperties())
+                    .Any(x => x.TargetMultiplicity() == EdmMultiplicity.Many && !x.ContainsTarget);
+        }
+        internal static IEnumerable<IEdmComplexType> GetAllCollectionComplexTypes(this ODataContext context)
+        {
+            return context.Model
+                        .SchemaElements
+                        .OfType<IEdmStructuredType>()
+                        .SelectMany(x => x.StructuralProperties())
+                        .Where(x => x.Type.IsCollection())
+                        .Select(x => x.Type.Definition.AsElementType())
+                        .OfType<IEdmComplexType>()
+                        .Distinct()
+                        .ToList();
+        }
+        internal static IEnumerable<IEdmStructuredType> GetAllCollectionEntityTypes(this ODataContext context)
+        {
+            var collectionEntityTypes = new HashSet<IEdmStructuredType>(
+                                                (context.EntityContainer?
+                                                    .EntitySets()
+                                                    .Select(x => x.EntityType) ??
+                                                Enumerable.Empty<IEdmStructuredType>())
+                                                .Union(context.Model
+                                                                .SchemaElements
+                                                                .OfType<IEdmStructuredType>()
+                                                                .SelectMany(x => x.NavigationProperties())
+                                                                .Where(x => x.TargetMultiplicity() == EdmMultiplicity.Many)
+                                                                .Select(x => x.Type.ToStructuredType()))
+                                                .Distinct()); // we could include actions and functions but actions are not pageable by nature (OData.NextLink) and functions might have specific annotations (deltalink)
+            var derivedCollectionTypes = collectionEntityTypes.SelectMany(x => context.Model.FindAllDerivedTypes(x).OfType<IEdmStructuredType>())
+                                                                .Where(x => !collectionEntityTypes.Contains(x))
+                                                                .Distinct()
+                                                                .ToArray();
+            return collectionEntityTypes.Union(derivedCollectionTypes);
+        }
+
+        private static OpenApiSchema CreateCollectionSchema(ODataContext context, IEdmStructuredType structuredType)
+        {
+            OpenApiSchema schema = null;
+            var entityType = structuredType as IEdmEntityType;
+
+            if (context.Settings.EnableDerivedTypesReferencesForResponses && entityType != null)
+            {
+                schema = EdmModelHelper.GetDerivedTypesReferenceSchema(entityType, context.Model);
+            }
+
+            if (schema == null)
+            {
+                schema = new OpenApiSchema
+                {
+                    UnresolvedReference = true,
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.Schema,
+                        Id = entityType?.FullName() ?? structuredType.FullTypeName()
+                    }
+                };
+            }
+            return CreateCollectionSchema(context, schema, entityType?.Name ?? structuredType.FullTypeName());
+        }
+        private static OpenApiSchema CreateCollectionSchema(ODataContext context, OpenApiSchema schema, string typeName)
+        {
+            var properties = new Dictionary<string, OpenApiSchema>
+            {
+                {
+                    "value",
+                    new OpenApiSchema
+                    {
+                        Type = "array",
+                        Items = schema
+                    }
+                }
+            };
+
+            OpenApiSchema baseSchema = new()
+            {
+                Type = Constants.ObjectType,
+                Properties = properties
+            };
+
+            OpenApiSchema collectionSchema;
+            if (context.Settings.EnablePagination || context.Settings.EnableCount)
+            {
+                if (context.Settings.EnableODataAnnotationReferencesForResponses)
+                {
+                    // @odata.nextLink + @odata.count
+                    OpenApiSchema paginationCountSchema = new()
+                    {
+                        UnresolvedReference = true,
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.Schema,
+                            Id = Constants.BaseCollectionPaginationCountResponse
+                        }
+                    };
+
+                    collectionSchema = new OpenApiSchema
+                    {
+                        AllOf = new List<OpenApiSchema>
+                        {
+                            paginationCountSchema,
+                            baseSchema
+                        }
+                    };
+                }
+                else
+                {
+                    if (context.Settings.EnablePagination)
+                        baseSchema.Properties.Add(ODataConstants.OdataNextLink);
+
+                    if (context.Settings.EnableCount)
+                        baseSchema.Properties.Add(ODataConstants.OdataCount);
+
+                    collectionSchema = baseSchema;
+                }               
+            }
+            else
+            {
+                collectionSchema = baseSchema;
+            }
+
+            collectionSchema.Title = $"Collection of {typeName}";
+            collectionSchema.Type = Constants.ObjectType;
+            return collectionSchema;
         }
 
         /// <summary>
@@ -79,10 +307,10 @@ namespace Microsoft.OpenApi.OData.Generator
             Utils.CheckArgumentNull(context, nameof(context));
             Utils.CheckArgumentNull(enumType, nameof(enumType));
 
-            OpenApiSchema schema = new OpenApiSchema
+            OpenApiSchema schema = new()
             {
                 // An enumeration type is represented as a Schema Object of type string
-                Type = "string",
+                Type = Constants.StringType,
 
                 // containing the OpenAPI Specification enum keyword.
                 Enum = new List<IOpenApiAny>(),
@@ -91,15 +319,50 @@ namespace Microsoft.OpenApi.OData.Generator
                 // whose value is the value of the unqualified annotation Core.Description of the enumeration type.
                 Description = context.Model.GetDescriptionAnnotation(enumType)
             };
+            
+            // If the enum is flagged, add the extension info to the description
+            if (context.Settings.AddEnumFlagsExtension && enumType.IsFlags)
+            {
+                var enumFlagsExtension = new OpenApiEnumFlagsExtension
+                {
+                    IsFlags = true,
+                };
+                schema.Extensions.Add(OpenApiEnumFlagsExtension.Name, enumFlagsExtension);
+            }
+
+            var extension = (context.Settings.OpenApiSpecVersion == OpenApiSpecVersion.OpenApi2_0 ||
+                            context.Settings.OpenApiSpecVersion == OpenApiSpecVersion.OpenApi3_0 ) &&
+                            context.Settings.AddEnumDescriptionExtension ? 
+                                new OpenApiEnumValuesDescriptionExtension {
+                                    EnumName = enumType.Name,
+                                } : 
+                                null;
 
             // Enum value is an array that contains a string with the member name for each enumeration member.
             foreach (IEdmEnumMember member in enumType.Members)
             {
                 schema.Enum.Add(new OpenApiString(member.Name));
+                AddEnumDescription(member, extension, context);
             }
 
+            if(extension?.ValuesDescriptions.Any() ?? false)
+                schema.Extensions.Add(OpenApiEnumValuesDescriptionExtension.Name, extension);
             schema.Title = enumType.Name;
             return schema;
+        }
+        private static void AddEnumDescription(IEdmEnumMember member, OpenApiEnumValuesDescriptionExtension target, ODataContext context)
+        {
+            if (target == null)
+                return;
+            
+            var enumDescription = context.Model.GetDescriptionAnnotation(member);
+            if(!string.IsNullOrEmpty(enumDescription))
+                target.ValuesDescriptions.Add(new EnumDescription
+                {
+                    Name = member.Name,
+                    Value = member.Name,
+                    Description = enumDescription
+                });
         }
 
         /// <summary>
@@ -144,6 +407,9 @@ namespace Microsoft.OpenApi.OData.Generator
             // whose value is the value of the unqualified annotation Core.Description of the property.
             schema.Description = context.Model.GetDescriptionAnnotation(property);
 
+            // Set property with Computed Annotation in CSDL to readonly
+            schema.ReadOnly = context.Model.GetBoolean(property, CoreConstants.Computed) ?? false;
+
             return schema;
         }
 
@@ -164,9 +430,10 @@ namespace Microsoft.OpenApi.OData.Generator
             // structure properties
             foreach (var property in structuredType.DeclaredStructuralProperties())
             {
-                // OpenApiSchema propertySchema = property.Type.CreateSchema();
-                // propertySchema.Default = property.DefaultValueString != null ? new OpenApiString(property.DefaultValueString) : null;
-                properties.Add(property.Name, context.CreatePropertySchema(property));
+                OpenApiSchema propertySchema = context.CreatePropertySchema(property);
+                propertySchema.Description = context.Model.GetDescriptionAnnotation(property);
+                propertySchema.Extensions.AddCustomAttributesToExtensions(context, property);
+                properties.Add(property.Name, propertySchema);
             }
 
             // navigation properties
@@ -174,6 +441,8 @@ namespace Microsoft.OpenApi.OData.Generator
             {
                 OpenApiSchema propertySchema = context.CreateEdmTypeSchema(property.Type);
                 propertySchema.Description = context.Model.GetDescriptionAnnotation(property);
+                propertySchema.Extensions.AddCustomAttributesToExtensions(context, property);
+                propertySchema.Extensions.Add(Constants.xMsNavigationProperty, new OpenApiBoolean(true));
                 properties.Add(property.Name, propertySchema);
             }
 
@@ -185,7 +454,7 @@ namespace Microsoft.OpenApi.OData.Generator
             return context.CreateSchema(typeDefinition.UnderlyingType);
         }
 
-        private static OpenApiSchema CreateSchemaTypeSchema(this ODataContext context, IEdmType edmType)
+        internal static OpenApiSchema CreateSchemaTypeSchema(this ODataContext context, IEdmType edmType)
         {
             Debug.Assert(context != null);
             Debug.Assert(edmType != null);
@@ -209,7 +478,7 @@ namespace Microsoft.OpenApi.OData.Generator
         }
 
         private static OpenApiSchema CreateStructuredTypeSchema(this ODataContext context, IEdmStructuredType structuredType, bool processBase, bool processExample,
-            IEnumerable<IEdmEntityType> derivedTypes = null)
+            IEnumerable<IEdmStructuredType> derivedTypes = null)
         {
             Debug.Assert(context != null);
             Debug.Assert(structuredType != null);
@@ -222,7 +491,7 @@ namespace Microsoft.OpenApi.OData.Generator
 
             if (context.Settings.EnableDiscriminatorValue && derivedTypes == null)
             {
-                derivedTypes = context.Model.FindDirectlyDerivedTypes(structuredType).OfType<IEdmEntityType>();
+                derivedTypes = context.Model.FindAllDerivedTypes(structuredType);
             }
 
             if (processBase && structuredType.BaseType != null)
@@ -248,6 +517,7 @@ namespace Microsoft.OpenApi.OData.Generator
                         // 1. a JSON Reference to the Schema Object of the base type
                         new OpenApiSchema
                         {
+                            UnresolvedReference = true,
                             Reference = new OpenApiReference
                             {
                                 Type = ReferenceType.Schema,
@@ -269,20 +539,31 @@ namespace Microsoft.OpenApi.OData.Generator
             {
                 // The discriminator object is added to structured types which have derived types.
                 OpenApiDiscriminator discriminator = null;
-                if (context.Settings.EnableDiscriminatorValue && derivedTypes.Any() && structuredType.BaseType != null)
+                if (context.Settings.EnableDiscriminatorValue && derivedTypes.Any())
                 {
+                    Dictionary<string, string> mapping = derivedTypes
+                        .ToDictionary(x => $"#{x.FullTypeName()}", x => new OpenApiSchema
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.Schema,
+                                Id = x.FullTypeName()
+                            }
+                        }.Reference.ReferenceV3);
+
                     discriminator = new OpenApiDiscriminator
                     {
-                        PropertyName = "@odata.type"
+                        PropertyName = Constants.OdataType,
+                        Mapping = mapping
                     };
                 }
 
                 // A structured type without a base type is represented as a Schema Object of type object
-                OpenApiSchema schema = new OpenApiSchema
+                OpenApiSchema schema = new()
                 {
                     Title = (structuredType as IEdmSchemaElement)?.Name,
 
-                    Type = "object",
+                    Type = Constants.ObjectType,
 
                     Discriminator = discriminator,
 
@@ -295,6 +576,31 @@ namespace Microsoft.OpenApi.OData.Generator
                     OneOf = null,
                     AnyOf = null
                 };
+
+                if (context.Settings.EnableDiscriminatorValue)
+                {
+                    OpenApiString defaultValue = null;
+                    bool isBaseTypeEntity = Constants.EntityName.Equals(structuredType.BaseType?.FullTypeName().Split('.').Last(), StringComparison.OrdinalIgnoreCase);
+                    bool isBaseTypeAbstractNonEntity = (structuredType.BaseType?.IsAbstract ?? false) && !isBaseTypeEntity;
+
+                    if (!context.Settings.EnableTypeDisambiguationForDefaultValueOfOdataTypeProperty ||
+                        isBaseTypeAbstractNonEntity ||
+                        context.Model.IsBaseTypeReferencedAsTypeInModel(structuredType.BaseType))
+                    {
+                        defaultValue = new("#" + structuredType.FullTypeName());
+                    }
+
+                    if (!schema.Properties.TryAdd(Constants.OdataType, new OpenApiSchema()
+                    {
+                        Type = Constants.StringType,
+                        Default = defaultValue,
+                    }))
+                    {
+                        throw new InvalidOperationException(
+                            $"Property {Constants.OdataType} is already present in schema {structuredType.FullTypeName()}; verify CSDL.");
+                    }
+                    schema.Required.Add(Constants.OdataType);
+                }
 
                 // It optionally can contain the field description,
                 // whose value is the value of the unqualified annotation Core.Description of the structured type.
@@ -374,7 +680,11 @@ namespace Microsoft.OpenApi.OData.Generator
                         }
                         else
                         {
-                            return new OpenApiString(schema.Type ?? schema.Format);
+                            return new OpenApiString(schema.Type ??
+                                (schema.AnyOf ?? Enumerable.Empty<OpenApiSchema>())
+                                .Union(schema.AllOf ?? Enumerable.Empty<OpenApiSchema>())
+                                .Union(schema.OneOf ?? Enumerable.Empty<OpenApiSchema>())
+                                .FirstOrDefault(static x => !string.IsNullOrEmpty(x.Format))?.Format ?? schema.Format);
                         }
                     }
 
@@ -382,7 +692,7 @@ namespace Microsoft.OpenApi.OData.Generator
                 case EdmTypeKind.Complex:
                 case EdmTypeKind.Enum:
                     OpenApiObject obj = new OpenApiObject();
-                    obj["@odata.type"] = new OpenApiString(edmTypeReference.FullName());
+                    obj[Constants.OdataType] = new OpenApiString(edmTypeReference.FullName());
                     return obj;
 
                 case EdmTypeKind.Collection:
@@ -392,6 +702,8 @@ namespace Microsoft.OpenApi.OData.Generator
                     return array;
 
                 case EdmTypeKind.Untyped:
+                    return new OpenApiObject();
+
                 case EdmTypeKind.TypeDefinition:
                 case EdmTypeKind.EntityReference:
                 default:

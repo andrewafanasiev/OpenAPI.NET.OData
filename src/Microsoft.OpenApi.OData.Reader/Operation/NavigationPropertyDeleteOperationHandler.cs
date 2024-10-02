@@ -6,7 +6,9 @@
 using System.Linq;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
+using Microsoft.OpenApi.OData.Edm;
 using Microsoft.OpenApi.OData.Generator;
+using Microsoft.OpenApi.OData.Vocabulary.Capabilities;
 
 namespace Microsoft.OpenApi.OData.Operation
 {
@@ -20,18 +22,29 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         public override OperationType OperationType => OperationType.Delete;
 
+        private DeleteRestrictionsType _deleteRestriction;
+
+        /// <inheritdoc/>
+        protected override void Initialize(ODataContext context, ODataPath path)
+        {
+            base.Initialize(context, path);
+            _deleteRestriction = GetRestrictionAnnotation(CapabilitiesConstants.DeleteRestrictions) as DeleteRestrictionsType;
+        }
+
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
-            // Summary
-            operation.Summary = "Delete navigation property " + NavigationProperty.Name + " for " + NavigationSource.Name;
+            // Summary and Description
+            string placeHolder = "Delete navigation property " + NavigationProperty.Name + " for " + NavigationSource.Name;
+            operation.Summary = _deleteRestriction?.Description ?? placeHolder;
+            operation.Description = _deleteRestriction?.LongDescription;
 
             // OperationId
             if (Context.Settings.EnableOperationId)
             {
                 string prefix = "Delete";
                 operation.OperationId = GetOperationId(prefix);
-            }
+            }            
 
             base.SetBasicInfo(operation);
         }
@@ -56,41 +69,41 @@ namespace Microsoft.OpenApi.OData.Operation
         /// <inheritdoc/>
         protected override void SetSecurity(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.DeleteRestrictions == null)
+            if (_deleteRestriction == null)
             {
                 return;
             }
 
-            operation.Security = Context.CreateSecurityRequirements(Restriction.DeleteRestrictions.Permissions).ToList();
+            operation.Security = Context.CreateSecurityRequirements(_deleteRestriction.Permissions).ToList();
         }
 
         /// <inheritdoc/>
         protected override void SetResponses(OpenApiOperation operation)
         {
-            operation.Responses = new OpenApiResponses
-            {
-                { Constants.StatusCode204, Constants.StatusCode204.GetResponse() },
-                { Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse() }
-            };
-
+            // Response for Delete methods should be 204 No Content
+            OpenApiConvertSettings settings = Context.Settings.Clone();
+            settings.UseSuccessStatusCodeRange = false;
+            
+            operation.AddErrorResponses(settings, true);
             base.SetResponses(operation);
         }
 
+        /// <inheritdoc/>
         protected override void AppendCustomParameters(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.DeleteRestrictions == null)
+            if (_deleteRestriction == null)
             {
                 return;
             }
 
-            if (Restriction.DeleteRestrictions.CustomHeaders != null)
+            if (_deleteRestriction.CustomHeaders != null)
             {
-                AppendCustomParameters(operation, Restriction.DeleteRestrictions.CustomHeaders, ParameterLocation.Header);
+                AppendCustomParameters(operation, _deleteRestriction.CustomHeaders, ParameterLocation.Header);
             }
 
-            if (Restriction.DeleteRestrictions.CustomQueryOptions != null)
+            if (_deleteRestriction.CustomQueryOptions != null)
             {
-                AppendCustomParameters(operation, Restriction.DeleteRestrictions.CustomQueryOptions, ParameterLocation.Query);
+                AppendCustomParameters(operation, _deleteRestriction.CustomQueryOptions, ParameterLocation.Query);
             }
         }
     }

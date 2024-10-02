@@ -3,27 +3,38 @@
 //  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.OData.Common;
+using Microsoft.OpenApi.OData.Edm;
 using Microsoft.OpenApi.OData.Generator;
+using Microsoft.OpenApi.OData.Vocabulary.Capabilities;
 
 namespace Microsoft.OpenApi.OData.Operation
 {
     /// <summary>
     /// Update a navigation property ref for a navigation source.
     /// </summary>
-    internal class RefPatchOperationHandler : NavigationPropertyOperationHandler
+    internal class RefPutOperationHandler : NavigationPropertyOperationHandler
     {
         /// <inheritdoc/>
         public override OperationType OperationType => OperationType.Patch;
+        private UpdateRestrictionsType _updateRestriction;
+
+        /// <inheritdoc/>
+        protected override void Initialize(ODataContext context, ODataPath path)
+        {
+            base.Initialize(context, path);
+            _updateRestriction = GetRestrictionAnnotation(CapabilitiesConstants.UpdateRestrictions) as UpdateRestrictionsType;
+        }
 
         /// <inheritdoc/>
         protected override void SetBasicInfo(OpenApiOperation operation)
         {
-            // Summary
-            operation.Summary = "Update the ref of navigation property " + NavigationProperty.Name + " in " + NavigationSource.Name;
+            // Summary and Description
+            string placeHolder = "Update the ref of navigation property " + NavigationProperty.Name + " in " + NavigationSource.Name;
+            operation.Summary = _updateRestriction?.Description ?? placeHolder;
+            operation.Description = _updateRestriction?.LongDescription;
 
             // OperationId
             if (Context.Settings.EnableOperationId)
@@ -31,30 +42,18 @@ namespace Microsoft.OpenApi.OData.Operation
                 string prefix = "UpdateRef";
                 operation.OperationId = GetOperationId(prefix);
             }
-
-            base.SetBasicInfo(operation);
         }
 
         /// <inheritdoc/>
         protected override void SetRequestBody(OpenApiOperation operation)
         {
-            OpenApiSchema schema = new OpenApiSchema
-            {
-                Type = "String"
-            };
-
             operation.RequestBody = new OpenApiRequestBody
             {
-                Required = true,
-                Description = "New navigation property ref values",
-                Content = new Dictionary<string, OpenApiMediaType>
-                {
-                    {
-                        Constants.ApplicationJsonMediaType, new OpenApiMediaType
-                        {
-                            Schema = schema
-                        }
-                    }
+                UnresolvedReference = true,
+                Reference = new OpenApiReference
+                {              
+                    Type = ReferenceType.RequestBody,
+                    Id = Constants.ReferencePutRequestBodyName
                 }
             };
 
@@ -66,38 +65,41 @@ namespace Microsoft.OpenApi.OData.Operation
         {
             operation.Responses = new OpenApiResponses
             {
-                { Constants.StatusCode204, Constants.StatusCode204.GetResponse() },
-                { Constants.StatusCodeDefault, Constants.StatusCodeDefault.GetResponse() }
+                {
+                    Constants.StatusCode204,
+                    new OpenApiResponse { Description = "Success" }
+                }
             };
 
+            operation.AddErrorResponses(Context.Settings, false);
             base.SetResponses(operation);
         }
 
         protected override void SetSecurity(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.UpdateRestrictions == null)
+            if (_updateRestriction == null)
             {
                 return;
             }
 
-            operation.Security = Context.CreateSecurityRequirements(Restriction.UpdateRestrictions.Permissions).ToList();
+            operation.Security = Context.CreateSecurityRequirements(_updateRestriction.Permissions).ToList();
         }
 
         protected override void AppendCustomParameters(OpenApiOperation operation)
         {
-            if (Restriction == null || Restriction.UpdateRestrictions == null)
+            if (_updateRestriction == null)
             {
                 return;
             }
 
-            if (Restriction.UpdateRestrictions.CustomHeaders != null)
+            if (_updateRestriction.CustomHeaders != null)
             {
-                AppendCustomParameters(operation, Restriction.UpdateRestrictions.CustomHeaders, ParameterLocation.Header);
+                AppendCustomParameters(operation, _updateRestriction.CustomHeaders, ParameterLocation.Header);
             }
 
-            if (Restriction.UpdateRestrictions.CustomQueryOptions != null)
+            if (_updateRestriction.CustomQueryOptions != null)
             {
-                AppendCustomParameters(operation, Restriction.UpdateRestrictions.CustomQueryOptions, ParameterLocation.Query);
+                AppendCustomParameters(operation, _updateRestriction.CustomQueryOptions, ParameterLocation.Query);
             }
         }
     }

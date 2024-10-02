@@ -1,9 +1,9 @@
-﻿{
+{
   "swagger": "2.0",
   "info": {
     "title": "OData Service for namespace Default",
     "description": "This OData service is located at http://localhost",
-    "version": "1.0.1"
+    "version": "1.0.0"
   },
   "host": "localhost",
   "schemes": [
@@ -17,9 +17,6 @@
         ],
         "summary": "Get entities from Categories",
         "operationId": "Categories.CategoryDto.ListCategoryDto",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -91,19 +88,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of CategoryDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.CategoryDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.CategoryDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -145,7 +130,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of CategoryDto entities."
     },
     "/Categories({Id})": {
       "get": {
@@ -161,7 +147,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of CategoryDto",
+            "description": "The unique identifier of CategoryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -225,7 +211,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of CategoryDto",
+            "description": "The unique identifier of CategoryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -263,7 +249,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of CategoryDto",
+            "description": "The unique identifier of CategoryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -287,7 +273,34 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of CategoryDto entities."
+    },
+    "/Categories/$count": {
+      "get": {
+        "tags": [
+          "Categories.CategoryDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Categories.GetCount-2f72",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Documents": {
       "get": {
@@ -296,9 +309,6 @@
         ],
         "summary": "Get entities from Documents",
         "operationId": "Documents.DocumentDto.ListDocumentDto",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -384,19 +394,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of DocumentDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -438,7 +436,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
     },
     "/Documents({Id})": {
       "get": {
@@ -454,7 +453,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -524,7 +523,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -562,7 +561,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -586,23 +585,21 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
     },
     "/Documents({Id})/Default.Upload": {
       "post": {
         "tags": [
-          "Documents.Actions"
+          "Documents.DocumentDto"
         ],
         "summary": "Invoke action Upload",
-        "operationId": "Documents.Upload",
-        "produces": [
-          "application/json"
-        ],
+        "operationId": "Documents.DocumentDto.Upload",
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -613,17 +610,15 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "schema": {
-              "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-            }
+            "$ref": "#/responses/UploadResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "action"
-      }
+      },
+      "x-description": "Provides operations to call the Upload method."
     },
     "/Documents({Id})/Revisions": {
       "get": {
@@ -632,14 +627,11 @@
         ],
         "summary": "Get Revisions from Documents",
         "operationId": "Documents.ListRevisions",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -752,42 +744,28 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "title": "Collection of RevisionDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.RevisionDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the Revisions property of the Siterra.Documents.App.DTO.DocumentDto entity."
     },
-    "/Documents({Id})/Revisions({Id1})": {
-      "get": {
+    "/Documents({Id})/Revisions({Id1})/$ref": {
+      "delete": {
         "tags": [
           "Documents.RevisionDto"
         ],
-        "summary": "Get Revisions from Documents",
-        "operationId": "Documents.GetRevisions",
-        "produces": [
-          "application/json"
-        ],
+        "summary": "Delete ref of navigation property Revisions for Documents",
+        "operationId": "Documents.revisions.DeleteRefRevisionDto",
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -798,7 +776,7 @@
           {
             "in": "path",
             "name": "Id1",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -807,61 +785,60 @@
             "x-ms-docs-key-type": "RevisionDto"
           },
           {
-            "in": "query",
-            "name": "$select",
-            "description": "Select properties to be returned",
-            "type": "array",
-            "items": {
-              "enum": [
-                "Id",
-                "Number",
-                "DocumentId",
-                "DocumentName",
-                "DocumentDescription",
-                "CreationDate",
-                "CreatedBy",
-                "IsReviewed",
-                "ReviewedBy",
-                "ReviewedDate",
-                "IsApproved",
-                "ApprovedBy",
-                "ApprovedDate",
-                "IsRejected",
-                "RejectedBy",
-                "RejectedDate",
-                "DomainId",
-                "Document"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "$expand",
-            "description": "Expand related entities",
-            "type": "array",
-            "items": {
-              "enum": [
-                "*",
-                "Document"
-              ],
-              "type": "string"
-            }
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
           }
         ],
         "responses": {
-          "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-            }
+          "204": {
+            "description": "Success"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
+    },
+    "/Documents({Id})/Revisions/$count": {
+      "get": {
+        "tags": [
+          "Documents.RevisionDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Documents.Revisions.GetCount-f834",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Documents({Id})/Revisions/$ref": {
       "get": {
@@ -870,14 +847,11 @@
         ],
         "summary": "Get ref of Revisions from Documents",
         "operationId": "Documents.ListRefRevisions",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -948,19 +922,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property links",
-            "schema": {
-              "title": "Collection of links of RevisionDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/StringCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -974,17 +936,11 @@
         ],
         "summary": "Create new navigation property ref to Revisions for Documents",
         "operationId": "Documents.CreateRefRevisions",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -993,21 +949,12 @@
             "x-ms-docs-key-type": "DocumentDto"
           },
           {
-            "in": "body",
-            "name": "body",
-            "description": "New navigation property ref value",
-            "required": true,
-            "schema": {
-              "type": "String"
-            }
+            "$ref": "#/parameters/refPostBody"
           }
         ],
         "responses": {
-          "201": {
-            "description": "Created navigation property link.",
-            "schema": {
-              "type": "String"
-            }
+          "204": {
+            "description": "Success"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -1025,7 +972,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1042,7 +989,8 @@
           {
             "in": "query",
             "name": "@id",
-            "description": "Delete Uri",
+            "description": "The delete Uri",
+            "required": true,
             "type": "string"
           }
         ],
@@ -1055,7 +1003,250 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
+    },
+    "/Documents({Id})/Tags": {
+      "get": {
+        "tags": [
+          "Documents.DocumentTagRelDto"
+        ],
+        "summary": "Get Tags property value",
+        "operationId": "Documents.ListTags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/top"
+          },
+          {
+            "$ref": "#/parameters/skip"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          },
+          {
+            "$ref": "#/parameters/count"
+          },
+          {
+            "in": "query",
+            "name": "$orderby",
+            "description": "Order items by property values",
+            "type": "array",
+            "items": {
+              "enum": [
+                "Name",
+                "Name desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$select",
+            "description": "Select properties to be returned",
+            "type": "array",
+            "items": {
+              "enum": [
+                "Name"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$expand",
+            "description": "Expand related entities",
+            "type": "array",
+            "items": {
+              "enum": [
+                "*"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Documents.DocumentTagRelDto"
+        ],
+        "summary": "Update property Tags value.",
+        "operationId": "Documents.UpdateTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Documents.DocumentTagRelDto"
+        ],
+        "summary": "Sets a new value for the collection of DocumentTagRelDto.",
+        "operationId": "Documents.SetTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
       }
+    },
+    "/Documents({Id})/Tags/$count": {
+      "get": {
+        "tags": [
+          "Documents.DocumentTagRelDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Documents.Tags.GetCount-ed53",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
+    },
+    "/Documents/$count": {
+      "get": {
+        "tags": [
+          "Documents.DocumentDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Documents.GetCount-f555",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Libraries": {
       "get": {
@@ -1064,9 +1255,6 @@
         ],
         "summary": "Get entities from Libraries",
         "operationId": "Libraries.LibraryDto.ListLibraryDto",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -1167,19 +1355,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of LibraryDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.LibraryDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.LibraryDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -1221,7 +1397,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of LibraryDto entities."
     },
     "/Libraries({Id})": {
       "get": {
@@ -1237,7 +1414,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1312,7 +1489,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1350,7 +1527,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1374,7 +1551,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of LibraryDto entities."
     },
     "/Libraries({Id})/Documents": {
       "get": {
@@ -1383,14 +1561,11 @@
         ],
         "summary": "Get Documents from Libraries",
         "operationId": "Libraries.ListDocuments",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1482,42 +1657,28 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "title": "Collection of DocumentDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the Documents property of the Siterra.Documents.App.DTO.LibraryDto entity."
     },
-    "/Libraries({Id})/Documents({Id1})": {
-      "get": {
+    "/Libraries({Id})/Documents({Id1})/$ref": {
+      "delete": {
         "tags": [
           "Libraries.DocumentDto"
         ],
-        "summary": "Get Documents from Libraries",
-        "operationId": "Libraries.GetDocuments",
-        "produces": [
-          "application/json"
-        ],
+        "summary": "Delete ref of navigation property Documents for Libraries",
+        "operationId": "Libraries.documents.DeleteRefDocumentDto",
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1528,7 +1689,7 @@
           {
             "in": "path",
             "name": "Id1",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1537,23 +1698,90 @@
             "x-ms-docs-key-type": "DocumentDto"
           },
           {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        },
+        "x-ms-docs-operation-type": "operation"
+      },
+      "x-description": "Provides operations to manage the collection of LibraryDto entities."
+    },
+    "/Libraries({Id})/Documents({Id1})/Tags": {
+      "get": {
+        "tags": [
+          "Libraries.DocumentDto.DocumentTagRelDto"
+        ],
+        "summary": "Get Tags property value",
+        "operationId": "Libraries.Documents.ListTags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of LibraryDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "LibraryDto"
+          },
+          {
+            "in": "path",
+            "name": "Id1",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/top"
+          },
+          {
+            "$ref": "#/parameters/skip"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          },
+          {
+            "$ref": "#/parameters/count"
+          },
+          {
+            "in": "query",
+            "name": "$orderby",
+            "description": "Order items by property values",
+            "type": "array",
+            "items": {
+              "enum": [
+                "Name",
+                "Name desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
             "in": "query",
             "name": "$select",
             "description": "Select properties to be returned",
             "type": "array",
             "items": {
               "enum": [
-                "Id",
-                "Name",
-                "Description",
-                "Filename",
-                "NumberOfRevisions",
-                "Suffix",
-                "DomainId",
-                "ModificationDate",
-                "ModifiedBy",
-                "Tags",
-                "Revisions"
+                "Name"
               ],
               "type": "string"
             }
@@ -1565,8 +1793,7 @@
             "type": "array",
             "items": {
               "enum": [
-                "*",
-                "Revisions"
+                "*"
               ],
               "type": "string"
             }
@@ -1574,17 +1801,217 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
-        },
-        "x-ms-docs-operation-type": "operation"
+        }
+      },
+      "patch": {
+        "tags": [
+          "Libraries.DocumentDto.DocumentTagRelDto"
+        ],
+        "summary": "Update property Tags value.",
+        "operationId": "Libraries.Documents.UpdateTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of LibraryDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "LibraryDto"
+          },
+          {
+            "in": "path",
+            "name": "Id1",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Libraries.DocumentDto.DocumentTagRelDto"
+        ],
+        "summary": "Sets a new value for the collection of DocumentTagRelDto.",
+        "operationId": "Libraries.Documents.SetTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of LibraryDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "LibraryDto"
+          },
+          {
+            "in": "path",
+            "name": "Id1",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
       }
+    },
+    "/Libraries({Id})/Documents({Id1})/Tags/$count": {
+      "get": {
+        "tags": [
+          "Libraries.DocumentDto.DocumentTagRelDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Libraries.Documents.Tags.GetCount-2853",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of LibraryDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "LibraryDto"
+          },
+          {
+            "in": "path",
+            "name": "Id1",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
+    },
+    "/Libraries({Id})/Documents/$count": {
+      "get": {
+        "tags": [
+          "Libraries.DocumentDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Libraries.Documents.GetCount-34c7",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of LibraryDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "LibraryDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Libraries({Id})/Documents/$ref": {
       "get": {
@@ -1593,14 +2020,11 @@
         ],
         "summary": "Get ref of Documents from Libraries",
         "operationId": "Libraries.ListRefDocuments",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1657,19 +2081,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property links",
-            "schema": {
-              "title": "Collection of links of DocumentDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/StringCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -1683,17 +2095,11 @@
         ],
         "summary": "Create new navigation property ref to Documents for Libraries",
         "operationId": "Libraries.CreateRefDocuments",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1702,21 +2108,12 @@
             "x-ms-docs-key-type": "LibraryDto"
           },
           {
-            "in": "body",
-            "name": "body",
-            "description": "New navigation property ref value",
-            "required": true,
-            "schema": {
-              "type": "String"
-            }
+            "$ref": "#/parameters/refPostBody"
           }
         ],
         "responses": {
-          "201": {
-            "description": "Created navigation property link.",
-            "schema": {
-              "type": "String"
-            }
+          "204": {
+            "description": "Success"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -1734,7 +2131,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of LibraryDto",
+            "description": "The unique identifier of LibraryDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -1751,7 +2148,8 @@
           {
             "in": "query",
             "name": "@id",
-            "description": "Delete Uri",
+            "description": "The delete Uri",
+            "required": true,
             "type": "string"
           }
         ],
@@ -1764,7 +2162,34 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of LibraryDto entities."
+    },
+    "/Libraries/$count": {
+      "get": {
+        "tags": [
+          "Libraries.LibraryDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Libraries.GetCount-e13e",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Revisions": {
       "get": {
@@ -1773,9 +2198,6 @@
         ],
         "summary": "Get entities from Revisions",
         "operationId": "Revisions.RevisionDto.ListRevisionDto",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -1882,19 +2304,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of RevisionDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.RevisionDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -1936,7 +2346,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of RevisionDto entities."
     },
     "/Revisions({Id})": {
       "get": {
@@ -1952,7 +2363,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2029,7 +2440,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2067,7 +2478,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2091,7 +2502,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of RevisionDto entities."
     },
     "/Revisions({Id})/Document": {
       "get": {
@@ -2107,7 +2519,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2207,7 +2619,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the Document property of the Siterra.Documents.App.DTO.RevisionDto entity."
     },
     "/Revisions({Id})/Document/$ref": {
       "get": {
@@ -2223,7 +2636,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2245,20 +2658,17 @@
         },
         "x-ms-docs-operation-type": "operation"
       },
-      "patch": {
+      "put": {
         "tags": [
           "Revisions.Document"
         ],
         "summary": "Update the ref of navigation property Document in Revisions",
         "operationId": "Revisions.UpdateRefDocument",
-        "consumes": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2267,13 +2677,7 @@
             "x-ms-docs-key-type": "RevisionDto"
           },
           {
-            "in": "body",
-            "name": "body",
-            "description": "New navigation property ref values",
-            "required": true,
-            "schema": {
-              "type": "String"
-            }
+            "$ref": "#/parameters/refPutBody"
           }
         ],
         "responses": {
@@ -2296,7 +2700,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2320,7 +2724,511 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
+      },
+      "x-description": "Provides operations to manage the collection of RevisionDto entities."
+    },
+    "/Revisions({Id})/Document/DocumentClasses": {
+      "get": {
+        "tags": [
+          "Revisions.Document.DocumentClass"
+        ],
+        "summary": "Get DocumentClasses property value",
+        "operationId": "Revisions.Document.ListDocumentClasses",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "$ref": "#/parameters/top"
+          },
+          {
+            "$ref": "#/parameters/skip"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          },
+          {
+            "$ref": "#/parameters/count"
+          },
+          {
+            "in": "query",
+            "name": "$orderby",
+            "description": "Order items by property values",
+            "type": "array",
+            "items": {
+              "enum": [
+                "ClassInstance",
+                "ClassInstance desc",
+                "ClassId",
+                "ClassId desc",
+                "DocumentId",
+                "DocumentId desc",
+                "CreatedBy",
+                "CreatedBy desc",
+                "CreationDate",
+                "CreationDate desc",
+                "ModifiedBy",
+                "ModifiedBy desc",
+                "ModificationDate",
+                "ModificationDate desc",
+                "IsPrimary",
+                "IsPrimary desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$select",
+            "description": "Select properties to be returned",
+            "type": "array",
+            "items": {
+              "enum": [
+                "ClassInstance",
+                "ClassId",
+                "DocumentId",
+                "CreatedBy",
+                "CreationDate",
+                "ModifiedBy",
+                "ModificationDate",
+                "IsPrimary",
+                "Document"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$expand",
+            "description": "Expand related entities",
+            "type": "array",
+            "items": {
+              "enum": [
+                "*",
+                "Document"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Siterra.Documents.BusinessLogic.Entities.Document.DocumentClassCollectionResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Revisions.Document.DocumentClass"
+        ],
+        "summary": "Update property DocumentClasses value.",
+        "operationId": "Revisions.Document.UpdateDocumentClasses",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentClass"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Revisions.Document.DocumentClass"
+        ],
+        "summary": "Sets a new value for the collection of DocumentClass.",
+        "operationId": "Revisions.Document.SetDocumentClasses",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentClass"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
       }
+    },
+    "/Revisions({Id})/Document/DocumentClasses/$count": {
+      "get": {
+        "tags": [
+          "Revisions.Document.DocumentClass"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Revisions.Document.DocumentClasses.GetCount-6342",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
+    },
+    "/Revisions({Id})/Document/Tags": {
+      "get": {
+        "tags": [
+          "Revisions.Document.DocumentTagRel"
+        ],
+        "summary": "Get Tags property value",
+        "operationId": "Revisions.Document.ListTags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "$ref": "#/parameters/top"
+          },
+          {
+            "$ref": "#/parameters/skip"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          },
+          {
+            "$ref": "#/parameters/count"
+          },
+          {
+            "in": "query",
+            "name": "$orderby",
+            "description": "Order items by property values",
+            "type": "array",
+            "items": {
+              "enum": [
+                "DocumentId",
+                "DocumentId desc",
+                "TagId",
+                "TagId desc",
+                "DomainId",
+                "DomainId desc",
+                "CreatedBy",
+                "CreatedBy desc",
+                "ModifiedBy",
+                "ModifiedBy desc",
+                "CreationDate",
+                "CreationDate desc",
+                "ModificationDate",
+                "ModificationDate desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$select",
+            "description": "Select properties to be returned",
+            "type": "array",
+            "items": {
+              "enum": [
+                "DocumentId",
+                "TagId",
+                "DomainId",
+                "CreatedBy",
+                "ModifiedBy",
+                "CreationDate",
+                "ModificationDate",
+                "Document",
+                "Tag"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$expand",
+            "description": "Expand related entities",
+            "type": "array",
+            "items": {
+              "enum": [
+                "*",
+                "Document",
+                "Tag"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRelCollectionResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Revisions.Document.DocumentTagRel"
+        ],
+        "summary": "Update property Tags value.",
+        "operationId": "Revisions.Document.UpdateTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRel"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Revisions.Document.DocumentTagRel"
+        ],
+        "summary": "Sets a new value for the collection of DocumentTagRel.",
+        "operationId": "Revisions.Document.SetTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRel"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      }
+    },
+    "/Revisions({Id})/Document/Tags/$count": {
+      "get": {
+        "tags": [
+          "Revisions.Document.DocumentTagRel"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Revisions.Document.Tags.GetCount-161f",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of RevisionDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "RevisionDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
+    },
+    "/Revisions/$count": {
+      "get": {
+        "tags": [
+          "Revisions.RevisionDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Revisions.GetCount-c6a5",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Tasks": {
       "get": {
@@ -2329,9 +3237,6 @@
         ],
         "summary": "Get entities from Tasks",
         "operationId": "Tasks.DocumentDto.ListDocumentDto",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "$ref": "#/parameters/top"
@@ -2417,19 +3322,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved entities",
-            "schema": {
-              "title": "Collection of DocumentDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -2471,7 +3364,8 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
     },
     "/Tasks({Id})": {
       "get": {
@@ -2487,7 +3381,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2557,7 +3451,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2595,7 +3489,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2619,23 +3513,21 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
     },
     "/Tasks({Id})/Default.Upload": {
       "post": {
         "tags": [
-          "Tasks.Actions"
+          "Tasks.DocumentDto"
         ],
         "summary": "Invoke action Upload",
-        "operationId": "Tasks.Upload",
-        "produces": [
-          "application/json"
-        ],
+        "operationId": "Tasks.DocumentDto.Upload",
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2646,17 +3538,15 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "schema": {
-              "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-            }
+            "$ref": "#/responses/UploadResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "action"
-      }
+      },
+      "x-description": "Provides operations to call the Upload method."
     },
     "/Tasks({Id})/Revisions": {
       "get": {
@@ -2665,14 +3555,11 @@
         ],
         "summary": "Get Revisions from Tasks",
         "operationId": "Tasks.ListRevisions",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2785,42 +3672,28 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "title": "Collection of RevisionDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/Siterra.Documents.App.DTO.RevisionDtoCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the Revisions property of the Siterra.Documents.App.DTO.DocumentDto entity."
     },
-    "/Tasks({Id})/Revisions({Id1})": {
-      "get": {
+    "/Tasks({Id})/Revisions({Id1})/$ref": {
+      "delete": {
         "tags": [
           "Tasks.RevisionDto"
         ],
-        "summary": "Get Revisions from Tasks",
-        "operationId": "Tasks.GetRevisions",
-        "produces": [
-          "application/json"
-        ],
+        "summary": "Delete ref of navigation property Revisions for Tasks",
+        "operationId": "Tasks.revisions.DeleteRefRevisionDto",
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2831,7 +3704,7 @@
           {
             "in": "path",
             "name": "Id1",
-            "description": "key: Id of RevisionDto",
+            "description": "The unique identifier of RevisionDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2840,61 +3713,60 @@
             "x-ms-docs-key-type": "RevisionDto"
           },
           {
-            "in": "query",
-            "name": "$select",
-            "description": "Select properties to be returned",
-            "type": "array",
-            "items": {
-              "enum": [
-                "Id",
-                "Number",
-                "DocumentId",
-                "DocumentName",
-                "DocumentDescription",
-                "CreationDate",
-                "CreatedBy",
-                "IsReviewed",
-                "ReviewedBy",
-                "ReviewedDate",
-                "IsApproved",
-                "ApprovedBy",
-                "ApprovedDate",
-                "IsRejected",
-                "RejectedBy",
-                "RejectedDate",
-                "DomainId",
-                "Document"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "$expand",
-            "description": "Expand related entities",
-            "type": "array",
-            "items": {
-              "enum": [
-                "*",
-                "Document"
-              ],
-              "type": "string"
-            }
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
           }
         ],
         "responses": {
-          "200": {
-            "description": "Retrieved navigation property",
-            "schema": {
-              "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-            }
+          "204": {
+            "description": "Success"
           },
           "default": {
             "$ref": "#/responses/error"
           }
         },
         "x-ms-docs-operation-type": "operation"
-      }
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
+    },
+    "/Tasks({Id})/Revisions/$count": {
+      "get": {
+        "tags": [
+          "Tasks.RevisionDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Tasks.Revisions.GetCount-9297",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     },
     "/Tasks({Id})/Revisions/$ref": {
       "get": {
@@ -2903,14 +3775,11 @@
         ],
         "summary": "Get ref of Revisions from Tasks",
         "operationId": "Tasks.ListRefRevisions",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -2981,19 +3850,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Retrieved navigation property links",
-            "schema": {
-              "title": "Collection of links of RevisionDto",
-              "type": "object",
-              "properties": {
-                "value": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
+            "$ref": "#/responses/StringCollectionResponse"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -3007,17 +3864,11 @@
         ],
         "summary": "Create new navigation property ref to Revisions for Tasks",
         "operationId": "Tasks.CreateRefRevisions",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -3026,21 +3877,12 @@
             "x-ms-docs-key-type": "DocumentDto"
           },
           {
-            "in": "body",
-            "name": "body",
-            "description": "New navigation property ref value",
-            "required": true,
-            "schema": {
-              "type": "String"
-            }
+            "$ref": "#/parameters/refPostBody"
           }
         ],
         "responses": {
-          "201": {
-            "description": "Created navigation property link.",
-            "schema": {
-              "type": "String"
-            }
+          "204": {
+            "description": "Success"
           },
           "default": {
             "$ref": "#/responses/error"
@@ -3058,7 +3900,7 @@
           {
             "in": "path",
             "name": "Id",
-            "description": "key: Id of DocumentDto",
+            "description": "The unique identifier of DocumentDto",
             "required": true,
             "type": "integer",
             "format": "int32",
@@ -3075,7 +3917,8 @@
           {
             "in": "query",
             "name": "@id",
-            "description": "Delete Uri",
+            "description": "The delete Uri",
+            "required": true,
             "type": "string"
           }
         ],
@@ -3088,7 +3931,250 @@
           }
         },
         "x-ms-docs-operation-type": "operation"
+      },
+      "x-description": "Provides operations to manage the collection of DocumentDto entities."
+    },
+    "/Tasks({Id})/Tags": {
+      "get": {
+        "tags": [
+          "Tasks.DocumentTagRelDto"
+        ],
+        "summary": "Get Tags property value",
+        "operationId": "Tasks.ListTags",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/top"
+          },
+          {
+            "$ref": "#/parameters/skip"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          },
+          {
+            "$ref": "#/parameters/count"
+          },
+          {
+            "in": "query",
+            "name": "$orderby",
+            "description": "Order items by property values",
+            "type": "array",
+            "items": {
+              "enum": [
+                "Name",
+                "Name desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$select",
+            "description": "Select properties to be returned",
+            "type": "array",
+            "items": {
+              "enum": [
+                "Name"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "$expand",
+            "description": "Expand related entities",
+            "type": "array",
+            "items": {
+              "enum": [
+                "*"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Tasks.DocumentTagRelDto"
+        ],
+        "summary": "Update property Tags value.",
+        "operationId": "Tasks.UpdateTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tasks.DocumentTagRelDto"
+        ],
+        "summary": "Sets a new value for the collection of DocumentTagRelDto.",
+        "operationId": "Tasks.SetTags",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "description": "ETag",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "New property values",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
       }
+    },
+    "/Tasks({Id})/Tags/$count": {
+      "get": {
+        "tags": [
+          "Tasks.DocumentTagRelDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Tasks.Tags.GetCount-3a1b",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Id",
+            "description": "The unique identifier of DocumentDto",
+            "required": true,
+            "type": "integer",
+            "format": "int32",
+            "maximum": 2147483647,
+            "minimum": -2147483648,
+            "x-ms-docs-key-type": "DocumentDto"
+          },
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
+    },
+    "/Tasks/$count": {
+      "get": {
+        "tags": [
+          "Tasks.DocumentDto"
+        ],
+        "summary": "Get the number of the resource",
+        "operationId": "Tasks.GetCount-2961",
+        "parameters": [
+          {
+            "$ref": "#/parameters/search"
+          },
+          {
+            "$ref": "#/parameters/filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/ODataCountResponse"
+          },
+          "default": {
+            "$ref": "#/responses/error"
+          }
+        }
+      },
+      "x-description": "Provides operations to count the resources in the collection."
     }
   },
   "definitions": {
@@ -3144,7 +4230,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -3250,7 +4337,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -3550,7 +4638,6 @@
         },
         "FileSized": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "FileClientPath": {
@@ -3570,17 +4657,14 @@
         },
         "IsNa": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "IsRejected": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "IsReviewed": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "NaDescription": {
@@ -3638,7 +4722,6 @@
         },
         "IsApproved": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "CategoryId": {
@@ -3687,13 +4770,15 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
-          }
+          },
+          "x-ms-navigationProperty": true
         },
         "Revisions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Revision.Revision"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -3946,7 +5031,6 @@
         },
         "TotalSize": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "FilesCounter": {
@@ -4119,19 +5203,22 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
-          }
+          },
+          "x-ms-navigationProperty": true
         },
         "LibraryChildren": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.Library"
-          }
+          },
+          "x-ms-navigationProperty": true
         },
         "SourceLibraryChildren": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.Library"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -4282,13 +5369,15 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.LibraryType"
-          }
+          },
+          "x-ms-navigationProperty": true
         },
         "ChildrenLibraryTypes": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.LibraryType"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -4364,7 +5453,6 @@
         },
         "Sized": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "ActualName": {
@@ -4405,19 +5493,18 @@
         },
         "Latitude": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "Longitude": {
           "format": "decimal",
-          "multipleOf": 1,
           "type": "number"
         },
         "Documents": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
-          }
+          },
+          "x-ms-navigationProperty": true
         }
       },
       "example": {
@@ -4548,7 +5635,8 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
-              }
+              },
+              "x-ms-navigationProperty": true
             }
           }
         }
@@ -4582,7 +5670,8 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
-              }
+              },
+              "x-ms-navigationProperty": true
             }
           }
         }
@@ -4793,18 +5882,18 @@
         }
       }
     },
-    "odata.error": {
+    "Default.ODataErrors.ODataError": {
       "required": [
         "error"
       ],
       "type": "object",
       "properties": {
         "error": {
-          "$ref": "#/definitions/odata.error.main"
+          "$ref": "#/definitions/Default.ODataErrors.MainError"
         }
       }
     },
-    "odata.error.main": {
+    "Default.ODataErrors.MainError": {
       "required": [
         "code",
         "message"
@@ -4815,7 +5904,8 @@
           "type": "string"
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "x-ms-primary-error-message": true
         },
         "target": {
           "type": "string"
@@ -4823,16 +5913,15 @@
         "details": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/odata.error.detail"
+            "$ref": "#/definitions/Default.ODataErrors.ErrorDetails"
           }
         },
-        "innererror": {
-          "description": "The structure of this object is service-specific",
-          "type": "object"
+        "innerError": {
+          "$ref": "#/definitions/Default.ODataErrors.InnerError"
         }
       }
     },
-    "odata.error.detail": {
+    "Default.ODataErrors.ErrorDetails": {
       "required": [
         "code",
         "message"
@@ -4849,6 +5938,188 @@
           "type": "string"
         }
       }
+    },
+    "Default.ODataErrors.InnerError": {
+      "description": "The structure of this object is service-specific",
+      "type": "object"
+    },
+    "ODataCountResponse": {
+      "format": "int32",
+      "type": "integer"
+    },
+    "Siterra.Documents.App.DTO.DocumentDtoCollectionResponse": {
+      "title": "Collection of DocumentDto",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.App.DTO.LibraryDtoCollectionResponse": {
+      "title": "Collection of LibraryDto",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.App.DTO.LibraryDto"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.App.DTO.RevisionDtoCollectionResponse": {
+      "title": "Collection of RevisionDto",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDto"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.App.DTO.CategoryDtoCollectionResponse": {
+      "title": "Collection of CategoryDto",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.App.DTO.CategoryDto"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentCollectionResponse": {
+      "title": "Collection of Document",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.Document"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Revision.RevisionCollectionResponse": {
+      "title": "Collection of Revision",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Revision.Revision"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Library.LibraryCollectionResponse": {
+      "title": "Collection of Library",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.Library"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Library.LibraryTypeCollectionResponse": {
+      "title": "Collection of LibraryType",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.LibraryType"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse": {
+      "title": "Collection of Siterra.Documents.App.DTO.DocumentTagRelDto",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDto"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentClassCollectionResponse": {
+      "title": "Collection of Siterra.Documents.BusinessLogic.Entities.Document.DocumentClass",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentClass"
+          }
+        }
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRelCollectionResponse": {
+      "title": "Collection of Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRel",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRel"
+          }
+        }
+      }
+    },
+    "StringCollectionResponse": {
+      "title": "Collection of string",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ReferenceUpdate": {
+      "type": "object",
+      "properties": {
+        "@odata.id": {
+          "type": "string"
+        },
+        "@odata.type": {
+          "type": "string"
+        }
+      }
+    },
+    "ReferenceCreate": {
+      "type": "object",
+      "properties": {
+        "@odata.id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "ReferenceNumeric": {
+      "enum": [
+        "-INF",
+        "INF",
+        "NaN"
+      ],
+      "type": "string"
     }
   },
   "parameters": {
@@ -4883,13 +6154,115 @@
       "name": "$search",
       "description": "Search items by search phrases",
       "type": "string"
+    },
+    "refPostBody": {
+      "in": "body",
+      "name": "body",
+      "description": "New navigation property ref value",
+      "required": true,
+      "schema": {
+        "$ref": "#/definitions/ReferenceCreate"
+      }
+    },
+    "refPutBody": {
+      "in": "body",
+      "name": "body",
+      "description": "New navigation property ref values",
+      "required": true,
+      "schema": {
+        "$ref": "#/definitions/ReferenceUpdate"
+      }
     }
   },
   "responses": {
     "error": {
       "description": "error",
       "schema": {
-        "$ref": "#/definitions/odata.error"
+        "$ref": "#/definitions/Default.ODataErrors.ODataError"
+      }
+    },
+    "ODataCountResponse": {
+      "description": "The count of the resource",
+      "schema": {
+        "$ref": "#/definitions/ODataCountResponse"
+      }
+    },
+    "Siterra.Documents.App.DTO.DocumentDtoCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDtoCollectionResponse"
+      }
+    },
+    "Siterra.Documents.App.DTO.LibraryDtoCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.LibraryDtoCollectionResponse"
+      }
+    },
+    "Siterra.Documents.App.DTO.RevisionDtoCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.RevisionDtoCollectionResponse"
+      }
+    },
+    "Siterra.Documents.App.DTO.CategoryDtoCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.CategoryDtoCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Revision.RevisionCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Revision.RevisionCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Library.LibraryCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.LibraryCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Library.LibraryTypeCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Library.LibraryTypeCollectionResponse"
+      }
+    },
+    "Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentTagRelDtoCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentClassCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentClassCollectionResponse"
+      }
+    },
+    "Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRelCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.BusinessLogic.Entities.Document.DocumentTagRelCollectionResponse"
+      }
+    },
+    "StringCollectionResponse": {
+      "description": "Retrieved collection",
+      "schema": {
+        "$ref": "#/definitions/StringCollectionResponse"
+      }
+    },
+    "UploadResponse": {
+      "description": "Success",
+      "schema": {
+        "$ref": "#/definitions/Siterra.Documents.App.DTO.DocumentDto"
       }
     }
   },
@@ -4903,11 +6276,11 @@
       "x-ms-docs-toc-type": "page"
     },
     {
-      "name": "Documents.Actions",
-      "x-ms-docs-toc-type": "container"
+      "name": "Documents.RevisionDto",
+      "x-ms-docs-toc-type": "page"
     },
     {
-      "name": "Documents.RevisionDto",
+      "name": "Documents.DocumentTagRelDto",
       "x-ms-docs-toc-type": "page"
     },
     {
@@ -4919,6 +6292,10 @@
       "x-ms-docs-toc-type": "page"
     },
     {
+      "name": "Libraries.DocumentDto.DocumentTagRelDto",
+      "x-ms-docs-toc-type": "page"
+    },
+    {
       "name": "Revisions.RevisionDto",
       "x-ms-docs-toc-type": "page"
     },
@@ -4927,15 +6304,23 @@
       "x-ms-docs-toc-type": "page"
     },
     {
+      "name": "Revisions.Document.DocumentClass",
+      "x-ms-docs-toc-type": "page"
+    },
+    {
+      "name": "Revisions.Document.DocumentTagRel",
+      "x-ms-docs-toc-type": "page"
+    },
+    {
       "name": "Tasks.DocumentDto",
       "x-ms-docs-toc-type": "page"
     },
     {
-      "name": "Tasks.Actions",
-      "x-ms-docs-toc-type": "container"
+      "name": "Tasks.RevisionDto",
+      "x-ms-docs-toc-type": "page"
     },
     {
-      "name": "Tasks.RevisionDto",
+      "name": "Tasks.DocumentTagRelDto",
       "x-ms-docs-toc-type": "page"
     }
   ]
